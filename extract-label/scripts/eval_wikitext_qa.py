@@ -1,4 +1,10 @@
 """
+python scripts/eval_wikitext_qa.py --baseline --resume --triplets "triplet_001 triplet_010 triplet_050"
+
+python scripts/eval_wikitext_qa.py \
+  --saves_dir ../data-preparation/unlearn/saves/wikitext_unlearn \
+  --resume --triplets "triplet_001 triplet_010 triplet_050"
+
 Evaluate WikiText QA triplets by answer correctness.
 
 Output artifacts:

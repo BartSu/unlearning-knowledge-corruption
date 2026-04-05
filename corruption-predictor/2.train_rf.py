@@ -2,12 +2,12 @@
 Train a Random Forest classifier to predict per-question corruption
 (CW: base correct -> unlearn wrong) from dataset + question features.
 
-Data:  training_data.csv  (366 questions × 19 features, label ∈ {0, 1})
+Data:  training_data.csv  (per-question rows × 23 features, label ∈ {0, 1})
 
 Strategy:
-  Leave-One-Group-Out CV (LOGO) where each group = triplet, so we always
-  evaluate on a completely unseen forgetting set.  Grid search over RF
-  hyperparameters, selecting the combo with the best macro-F1.
+  Leave-One-Group-Out CV (LOGO) where each group = triplet (split), so we
+  always evaluate on a completely unseen forgetting set.  Grid search over
+  RF hyperparameters, selecting the combo with the best macro-F1.
 """
 
 import argparse
@@ -102,7 +102,7 @@ def main():
     df, feature_cols = load_data(args.data, args.meta)
     X = df[feature_cols].values
     y = df["label"].values
-    groups = df["triplet"].values
+    groups = df["split"].values
 
     n_combos = 1
     for v in PARAM_GRID.values():
@@ -188,7 +188,7 @@ def main():
         print(f"    {fname:>35s}  {imp:.4f} ±{std:.4f}  {bar}")
 
     # ── Save artifacts ───────────────────────────────────────────────────
-    pred_df = df[["triplet", "record_index", "label"]].copy()
+    pred_df = df[["split", "source_train_index", "label"]].copy()
     pred_df["pred_label"] = y_pred
     pred_df["pred_prob"] = np.round(y_prob, 6)
     pred_df.to_csv(outdir / "logo_predictions.csv", index=False)
