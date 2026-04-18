@@ -136,7 +136,6 @@
 \begin{frame}{数据怎么来：四步}
     \centering
     \begin{tikzpicture}[
-        node distance=3.5mm,
         box/.style={draw, rounded corners=2pt, align=center,
                     minimum height=10mm, text width=30mm, font=\small},
         arr/.style={-Latex, thick, mDarkTeal},
@@ -154,7 +153,36 @@
     \vspace{1.4em}
     \centering
     \large
-    10×10 矩阵的\textbf{对角线} = L1 + L2\quad\textbf{非对角线} = L3
+    每个 ckpt 在每个簇上都评 PPL $\Rightarrow$ 10×10 矩阵
+\end{frame}
+
+\begin{frame}{L1 / L2 / L3 在 10×10 矩阵里的位置}
+    \centering
+    \begin{tikzpicture}[font=\footnotesize]
+        \def\s{0.38}
+        \foreach \i in {0,...,9} {
+            \foreach \j in {0,...,9} {
+                \ifnum\i=\j
+                    \fill[mLightBrown!60] (\j*\s, -\i*\s) rectangle +(\s,\s);
+                \else
+                    \fill[mDarkTeal!15] (\j*\s, -\i*\s) rectangle +(\s,\s);
+                \fi
+                \draw[white, thin] (\j*\s, -\i*\s) rectangle +(\s,\s);
+            }
+        }
+        \node[above] at (10*\s/2, 0.1) {评测簇 $e$ →};
+        \node[rotate=90, above] at (-0.15, -10*\s/2) {unlearn 簇 $m$ →};
+
+        \draw[-Latex, thick] (5*\s+2.2, 0.3) -- node[above, sloped]
+            {\textbf{对角线 $m=e$}} (3.5*\s, -3.5*\s+\s*0.5);
+        \node[right, align=left] at (5*\s+2.2, 0.3)
+            {\textbf{L1} = train 分片\\ \textbf{L2} = val / test 分片};
+
+        \draw[-Latex, thick] (5*\s+2.2, -1.5) -- node[above, sloped]
+            {\textbf{非对角线 $m\neq e$}} (6.5*\s, -3.5*\s+\s*0.5);
+        \node[right] at (5*\s+2.2, -1.5)
+            {\textbf{L3} = test 分片（别的簇）};
+    \end{tikzpicture}
 \end{frame}
 
 % ────────────────────────────────────────────────────────────────────────────
