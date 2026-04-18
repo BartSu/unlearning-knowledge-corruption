@@ -25,7 +25,7 @@ Ralph agent：每次迭代开始时阅读此文件，结束时更新此文件。
 
 ### 阶段 5 — 结果汇报
 - [ ] 重新生成 `z-doc/slides.tex` 中引用的所有图表
-- [ ] 使用最新结果更新 `z-doc/README-CN.md`
+- [x] 使用最新结果更新 `z-doc/README-CN.md`（已核对，数字与 audit_summary.json 一致）
 - [ ] 在全新克隆上完成最终端到端演练
 
 ## 迭代日志
@@ -37,6 +37,12 @@ Ralph agent：每次迭代开始时阅读此文件，结束时更新此文件。
 - 产物：<路径、commit 哈希>
 - 下一步：<下一个任务 id>
 -->
+
+### 迭代 2 — 2026-04-18
+- 任务：核对 `z-doc/README-CN.md` 与 `z-doc/slides.tex` 中的数字与当前 `audit_summary.json` 是否一致
+- 结果：pass（两份文档中的 L1/L2/L3 geo-mean、>1.1×/>2× 占比、LOO R²/ρ、top-1=storm、coverage ρ=−0.42 全部与本次重跑结果一致，无需修改）
+- 产物：无（文档已就位）
+- 下一步：阶段 5 剩余条目（图表重生成、全新克隆端到端演练）
 
 ### 迭代 1 — 2026-04-18
 - 任务：验证三层 knowledge corruption 视角 + 审计 forget dataset 无需 unlearn
