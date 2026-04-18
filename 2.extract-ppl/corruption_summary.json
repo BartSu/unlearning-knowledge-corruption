@@ -1,0 +1,206 @@
+{
+  "L1_forget": {
+    "n": 500,
+    "mean_log_ratio": 0.5663759594829,
+    "median_log_ratio": 0.5497541819698136,
+    "std_log_ratio": 0.2960597597766474,
+    "geo_mean_ratio": 1.7618703778973033,
+    "pct_up_10": 95.6,
+    "pct_up_2x": 33.2,
+    "pct_down_10": 0.0
+  },
+  "L2_locality_same_cluster": {
+    "n": 1000,
+    "mean_log_ratio": 0.2549011479451351,
+    "median_log_ratio": 0.20638994968813096,
+    "std_log_ratio": 0.1859373843533824,
+    "geo_mean_ratio": 1.290334062394755,
+    "pct_up_10": 82.8,
+    "pct_up_2x": 3.4000000000000004,
+    "pct_down_10": 0.0
+  },
+  "L3_cross_cluster_spillover": {
+    "n": 4500,
+    "mean_log_ratio": 0.1471194442496528,
+    "median_log_ratio": 0.12369709350961647,
+    "std_log_ratio": 0.10491286568374988,
+    "geo_mean_ratio": 1.1584923300132075,
+    "pct_up_10": 61.6,
+    "pct_up_2x": 0.022222222222222223,
+    "pct_down_10": 0.0
+  },
+  "per_cluster": {
+    "triplet_001": {
+      "geo_L1_forget": 1.4414819574849076,
+      "geo_L2_locality": 1.1677056970839308,
+      "geo_L3_in": 1.2066463407065022,
+      "geo_L3_out": 1.0739509255283992
+    },
+    "triplet_011": {
+      "geo_L1_forget": 1.4469995920866159,
+      "geo_L2_locality": 1.105374712024261,
+      "geo_L3_in": 1.127001344599872,
+      "geo_L3_out": 1.066616476854604
+    },
+    "triplet_021": {
+      "geo_L1_forget": 1.7064498867351923,
+      "geo_L2_locality": 1.3141846893642517,
+      "geo_L3_in": 1.1839887580914208,
+      "geo_L3_out": 1.1983677532617107
+    },
+    "triplet_031": {
+      "geo_L1_forget": 2.03014772440744,
+      "geo_L2_locality": 1.3901372770997114,
+      "geo_L3_in": 1.1262354127939354,
+      "geo_L3_out": 1.191520968999616
+    },
+    "triplet_041": {
+      "geo_L1_forget": 1.9860768515957707,
+      "geo_L2_locality": 1.4166128472563613,
+      "geo_L3_in": 1.185787568822958,
+      "geo_L3_out": 1.2036459121505971
+    },
+    "triplet_051": {
+      "geo_L1_forget": 1.858310533317861,
+      "geo_L2_locality": 1.2889931119590332,
+      "geo_L3_in": 1.1361701342611066,
+      "geo_L3_out": 1.1928566209526166
+    },
+    "triplet_061": {
+      "geo_L1_forget": 1.811469604534394,
+      "geo_L2_locality": 1.2094945443646177,
+      "geo_L3_in": 1.1524452772106235,
+      "geo_L3_out": 1.1815042398446327
+    },
+    "triplet_071": {
+      "geo_L1_forget": 2.4380284389697393,
+      "geo_L2_locality": 1.7827526557023765,
+      "geo_L3_in": 1.1783940385753968,
+      "geo_L3_out": 1.2462006907724135
+    },
+    "triplet_081": {
+      "geo_L1_forget": 1.7267144077229133,
+      "geo_L2_locality": 1.2265746015123065,
+      "geo_L3_in": 1.144374233357241,
+      "geo_L3_out": 1.180490334200207
+    },
+    "triplet_091": {
+      "geo_L1_forget": 1.4172160770772324,
+      "geo_L2_locality": 1.1235020191836327,
+      "geo_L3_in": 1.14688864748837,
+      "geo_L3_out": 1.0667788610340436
+    }
+  },
+  "locality_multiplier_self_over_cross": 1.114087175375526,
+  "geo_self_test": 1.290661447638626,
+  "geo_cross_test": 1.1584923300132075,
+  "geometry_corruption_correlations": {
+    "embedding_variance": {
+      "geo_L1_forget": -0.2716588721040552,
+      "geo_L2_locality": -0.4995688795500445,
+      "geo_L3_out": -0.038581138435544525
+    },
+    "mean_pairwise_similarity": {
+      "geo_L1_forget": 0.2716587796545378,
+      "geo_L2_locality": 0.4995687927831308,
+      "geo_L3_out": 0.03858107705355339
+    },
+    "token_entropy": {
+      "geo_L1_forget": 0.03484549341683711,
+      "geo_L2_locality": -0.19268097493420078,
+      "geo_L3_out": 0.20280825042535616
+    }
+  },
+  "per_cluster_table": [
+    {
+      "cluster": "triplet_001",
+      "embedding_variance": 0.0018,
+      "mean_pairwise_similarity": 0.3128,
+      "token_entropy": 8.6612,
+      "geo_L1_forget": 1.4415,
+      "geo_L2_locality": 1.1677,
+      "geo_L3_out": 1.074
+    },
+    {
+      "cluster": "triplet_011",
+      "embedding_variance": 0.0019,
+      "mean_pairwise_similarity": 0.2414,
+      "token_entropy": 8.8038,
+      "geo_L1_forget": 1.447,
+      "geo_L2_locality": 1.1054,
+      "geo_L3_out": 1.0666
+    },
+    {
+      "cluster": "triplet_021",
+      "embedding_variance": 0.002,
+      "mean_pairwise_similarity": 0.2284,
+      "token_entropy": 8.8923,
+      "geo_L1_forget": 1.7064,
+      "geo_L2_locality": 1.3142,
+      "geo_L3_out": 1.1984
+    },
+    {
+      "cluster": "triplet_031",
+      "embedding_variance": 0.002,
+      "mean_pairwise_similarity": 0.226,
+      "token_entropy": 9.1227,
+      "geo_L1_forget": 2.0301,
+      "geo_L2_locality": 1.3901,
+      "geo_L3_out": 1.1915
+    },
+    {
+      "cluster": "triplet_041",
+      "embedding_variance": 0.0017,
+      "mean_pairwise_similarity": 0.3152,
+      "token_entropy": 8.7149,
+      "geo_L1_forget": 1.9861,
+      "geo_L2_locality": 1.4166,
+      "geo_L3_out": 1.2036
+    },
+    {
+      "cluster": "triplet_051",
+      "embedding_variance": 0.0022,
+      "mean_pairwise_similarity": 0.1188,
+      "token_entropy": 9.3001,
+      "geo_L1_forget": 1.8583,
+      "geo_L2_locality": 1.289,
+      "geo_L3_out": 1.1929
+    },
+    {
+      "cluster": "triplet_061",
+      "embedding_variance": 0.0024,
+      "mean_pairwise_similarity": 0.0535,
+      "token_entropy": 9.3289,
+      "geo_L1_forget": 1.8115,
+      "geo_L2_locality": 1.2095,
+      "geo_L3_out": 1.1815
+    },
+    {
+      "cluster": "triplet_071",
+      "embedding_variance": 0.0017,
+      "mean_pairwise_similarity": 0.3309,
+      "token_entropy": 8.8816,
+      "geo_L1_forget": 2.438,
+      "geo_L2_locality": 1.7828,
+      "geo_L3_out": 1.2462
+    },
+    {
+      "cluster": "triplet_081",
+      "embedding_variance": 0.0022,
+      "mean_pairwise_similarity": 0.1188,
+      "token_entropy": 9.381,
+      "geo_L1_forget": 1.7267,
+      "geo_L2_locality": 1.2266,
+      "geo_L3_out": 1.1805
+    },
+    {
+      "cluster": "triplet_091",
+      "embedding_variance": 0.0022,
+      "mean_pairwise_similarity": 0.1459,
+      "token_entropy": 9.185,
+      "geo_L1_forget": 1.4172,
+      "geo_L2_locality": 1.1235,
+      "geo_L3_out": 1.0668
+    }
+  ]
+}

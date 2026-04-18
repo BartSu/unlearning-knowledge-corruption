@@ -1,3 +1,7 @@
 *.json
 *.csv
 *.png
+
+# whitelist published artefacts for fresh-clone reproduce
+!wikitext_cross_metrics_detail.json
+!corruption_summary.json
