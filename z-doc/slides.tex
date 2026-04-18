@@ -171,14 +171,13 @@
     \end{center}
 \end{frame}
 
-\begin{frame}{C1 + C2：三层衰减可视化}
+\begin{frame}{C1 + C2：一图}
     \centering
     \includegraphics[width=0.82\textwidth]{fig_three_layer_decay.pdf}
 
-    \vspace{0.4em}
+    \vspace{0.3em}
     \footnotesize
-    左轴：几何均值 $r$ 随层级严格递减（\textbf{C1}）；
-    右轴：$r>1.1$ 的样本比例在 L3 仍达 \alert{61.6\,\%}（\textbf{C2}：spillover 非平凡）。
+    左轴：L1 $>$ L2 $>$ L3\quad|\quad右轴：L3 仍有 \alert{61.6\,\%} 被抬高。
 \end{frame}
 
 \begin{frame}{C3：换个 forget set，副作用差多少？}
@@ -208,14 +207,13 @@
     \end{center}
 \end{frame}
 
-\begin{frame}{C3 可视化：10 个 forget set 的 profile}
+\begin{frame}{C3：一图}
     \centering
     \includegraphics[width=0.88\textwidth]{fig_per_forget_profile.pdf}
 
     \vspace{0.3em}
     \footnotesize
-    按 L1 升序排列；\alert{storm} 在三层上同时为最严重 forget set。
-    三层的极差比 $=$ L1 1.72$\times$ / L2 1.60$\times$ / L3 1.17$\times$。
+    按 L1 升序；\alert{storm} 三层同时最严重 $\Rightarrow$ 稳健坏 forget set。
 \end{frame}
 
 % ────────────────────────────────────────────────────────────────────────────
@@ -275,14 +273,13 @@
     $n=10$，单观察点；$n\uparrow$、换 unlearner 的稳健性待验证。
 \end{frame}
 
-\begin{frame}{审计预测散点（LOO, Ridge, 12 维几何）}
+\begin{frame}{审计散点：预测 vs 真实}
     \centering
     \includegraphics[width=0.96\textwidth]{fig_audit_scatter.pdf}
 
     \vspace{0.2em}
     \footnotesize
-    虚线为 $y=x$；三层均取得一致的 $\rho \approx 0.62$ 排序相关；L3 绝对
-    幅度小 $\Rightarrow$ $R^2$ 偏低，但\emph{相对排序}依然可用。
+    虚线 $y=x$；三层 $\rho \approx 0.62$；L3 幅度小、排序仍可用。
 \end{frame}
 
 \begin{frame}{几何 vs 文本表面}
@@ -333,41 +330,56 @@
 % ────────────────────────────────────────────────────────────────────────────
 \section{讨论}
 
-\begin{frame}{Related Work（占位，待程序化补全）}
-    \begin{description}
-        \item[Data-first 鲁棒性预测] Dang et al.\ (ACL 2024): 13 维训练集特征
-            $\to$ 对抗 ASR。我们把方法论迁到 \emph{生成式 unlearning 的
-            corruption profile 审计}。
-        \item[LLM unlearning] GradAscent / NPO / GradDiff / TOFU 由
-            \texttt{open-unlearning} 提供；我们\emph{固定 unlearner}，分析
-            其 data-conditioned 副作用。
-        \item[Influence / editing locality] Model-centric 的局部性已被广研；
-            我们用 10$\times$10 cross-ppl 矩阵把它变成可度量的三层风险。
-    \end{description}
+\begin{frame}{Related Work}
+    \begin{center}
+        \large
+        相邻工作与我们的差别
+    \end{center}
+
+    \vspace{0.6em}
+    \small
+    \begin{tabular}{@{}p{0.34\textwidth}p{0.58\textwidth}@{}}
+        \toprule
+        相邻方向 & 我们的差别 \\
+        \midrule
+        Data-first 鲁棒性\newline (Dang+ ACL'24) & 训练集特征 $\to$ 对抗 ASR \newline\; $\Rightarrow$ 迁到 \emph{unlearning corruption} \\
+        LLM unlearning 算法 & 我们固定 unlearner，分析\emph{数据依赖}的副作用 \\
+        Influence / editing\newline locality & model-centric $\to$ \emph{data-centric} 三层风险 \\
+        \bottomrule
+    \end{tabular}
 \end{frame}
 
 \begin{frame}{Limitations}
+    \vspace{0.3em}
+    \begin{center}
+        \large
+        四个「单」
+    \end{center}
+
+    \vspace{0.6em}
     \begin{itemize}
-        \item \textbf{$n=10$ clusters} —— 审计 $\rho=0.62$ 置信区间较宽；
-              100 triplet 全跑可升级到 $n=100$。
-        \item \textbf{单 unlearner} —— L1/L2/L3 对 NPO / GradDiff 的稳健性
-              待测。
-        \item \textbf{单 base model} —— Llama-3.1-8B-Instruct；其他规模 / 家族
-              未测。
-        \item \textbf{ppl $\neq$ fact} —— L3 的 61.6\,\% 样本是否对应 QA 准确率
-              下降？\texttt{2.extract-qa/} 管线已就位。
-        \item \textbf{Naive coverage 失败} —— §5.6 需要更细的几何风险度量。
+        \setlength\itemsep{0.6em}
+        \item 单 base model（Llama-3.1-8B-Instruct）
+        \item 单 unlearner（GradAscent）
+        \item 单 $n = 10$ forget sets（CI 较宽）
+        \item 单指标 PPL（$\neq$ QA 准确率）
     \end{itemize}
 \end{frame}
 
 \begin{frame}{Future Work}
+    \vspace{0.3em}
+    \begin{center}
+        \large
+        对应四个「单」的解法
+    \end{center}
+
+    \vspace{0.6em}
     \begin{enumerate}
-        \item \textbf{Scale-up}：100 triplet 全跑 unlearn $\Rightarrow$ $n=100$。
-        \item \textbf{跨 unlearner}：加 NPO / GradDiff，审计器须稳健。
-        \item \textbf{更好的 coverage}：方向投影 / mutual-reachability。
-        \item \textbf{Audit-driven forget 选择}：在 retain 约束下挑
-              predicted L3 最小的 $\mathcal{D}_f$，真跑 unlearn 验证。
-        \item \textbf{QA 层面}：target 换成 QA accuracy。
+        \setlength\itemsep{0.5em}
+        \item $n: 10 \to 100$（100 triplet 已生成）
+        \item 加 NPO / GradDiff 验证审计器稳健
+        \item PPL $\to$ QA accuracy（\texttt{2.extract-qa/} 已就位）
+        \item \emph{audit-driven} forget 选择：挑预测 L3 最低的 $\mathcal{D}_f$
     \end{enumerate}
 \end{frame}
 
