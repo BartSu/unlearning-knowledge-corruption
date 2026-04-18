@@ -38,6 +38,16 @@ Ralph agent：每次迭代开始时阅读此文件，结束时更新此文件。
 - 下一步：<下一个任务 id>
 -->
 
+### 迭代 6 — 2026-04-18（slides 可读性迭代，Ralph 10 轮）
+- 任务：用户要求「slides 每页想表达的内容越简单越好，尤其三层定义」。非 PROGRESS 列表项，作为 Stage 5 叙述打磨记录。
+- 结果：pass。10 轮共 9 次 commit（`dbebf4c..b7decb9`），改动集中在 `z-doc/slides.tex` + 重编 `slides.pdf`（28 页）：
+  - **三层定义**（用户核心关切）拆成两帧：`同心圆图 + 箭头标注 + 距离轴` / `r=PPL_unlearned/PPL_base 具体例子 r=1.8`；另加一帧 `L1/L2/L3 在 10×10 矩阵里的位置` 作数据视角补充。
+  - 一页一核心信息：一句话贡献、动机、C1+C2 headline、C3、审计问题/结果、几何-vs-文本表面、负结果、论文定位 均压成 headline+少量数字。
+  - Limitations 压成「四个单」，Future Work 对齐解法；section 标题精简避免换行。
+  - 数字未动，骨架未动，README-CN.md 无需同步（仅措辞简化，符合 AGENT.md 规则 6 的「精简化措辞」例外）。
+- 产物：`z-doc/slides.tex`、`z-doc/slides.pdf`
+- 下一步：阶段 4 留出 checkpoint R²/MAE；若要把审计从 n=10 扩到 n=100，补跑其余 90 个 triplet 的 unlearn + PPL + 几何。
+
 ### 迭代 5 — 2026-04-18
 - 任务：阶段 5 结果汇报 —— 根据现有 audit 产物（n=10 代表 triplet，10 个 HDBSCAN cluster 各抽 1 个）重新生成 slides.tex 引用的三张图，并重新编译 slides.pdf。
 - 结果：pass。`python z-doc/figures/make_figures.py` 读取 `4.regression-predictor/audit/{part1_corruption_profile,part1_per_sample_layers,part2_audit_predictions}.csv` 再生成 `fig_three_layer_decay.pdf` / `fig_per_forget_profile.pdf` / `fig_audit_scatter.pdf`，三张 PDF 均有差异并已更新。`xelatex slides.tex` 连跑两遍无错，`slides.pdf` 26 页 341 KB。关键数字与 audit_summary.json 完全一致：L1 geo=1.762×、L2 geo=1.290×、L3 geo=1.158×；LOO R² = 0.443 / 0.410 / 0.190；ρ ≈ 0.62；coverage ρ=−0.42。README-CN.md / slides.tex 叙述无需改动。
