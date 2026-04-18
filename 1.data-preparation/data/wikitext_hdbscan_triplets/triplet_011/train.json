@@ -1,0 +1,152 @@
+[
+  {
+    "text": "Chess players and theoreticians have long debated whether , given perfect play by both sides , the game should end in a win for White , or a draw . Since approximately 1889 , when World Champion Wilhelm Steinitz addressed this issue , the overwhelming consensus has been that a perfectly played game would end in a draw . However , a few notable players have argued that White 's advantage may be sufficient to force a win : Weaver Adams and Vsevolod Rauzer claimed that White is winning after the first move 1.e4 , while Hans Berliner argued that 1.d4 may win for White ."
+  },
+  {
+    "text": "Modern writers also argue that Black has certain countervailing advantages . The consensus that White should try to win can be a psychological burden for the white player , who sometimes loses by trying too hard to win . Some symmetrical openings ( i.e. those where both players make the same moves ) can lead to situations where moving first is a disadvantage , either for psychological or objective reasons ."
+  },
+  {
+    "text": "Chess theorists have long debated how enduring White 's initiative is and whether , if both sides play perfectly , the game should end in a win for White or a draw . George Walker wrote in 1846 that , \" The first move is an advantage , ... but if properly answered , the first move is of little worth \" . Steinitz , the first World Champion , who is widely considered the father of modern chess , wrote in 1889 , \" It is now conceded by all experts that by proper play on both sides the legitimate issue of a game ought to be a draw . \" Lasker and Capablanca , the second and third World Champions , agreed . Reuben Fine , one of the world 's leading players from 1936 to 1951 , wrote that White 's opening advantage is too intangible to be sufficient for a win without an error by Black ."
+  },
+  {
+    "text": "However , Georgiev and Kolev 's pessimistic assessment of 6.Bg5 has since been called into question , as White succeeded with 10.e5 ( another critical line ) in several later high @-@ level games . GM Zaven Andriasyan wrote in 2013 that after 10.f5 , \" a forced draw results \" , but that after 10.e5 , \" we reach a very sharp position , with mutual chances . \""
+  },
+  {
+    "text": "Modern writers also question the idea that White has an enduring advantage . Suba , in his influential 1991 book Dynamic Chess Strategy , rejects the notion that the initiative can always be transformed into an enduring advantage . He contends that sometimes the player with the initiative loses it with no logical explanation , and that , \" Sometimes you must lose it , just like that . If you try to cling to it , by forcing the issue , your dynamic potential will become exhausted and you won 't be able to face a vigorous counter @-@ attack . \" Rowson and Watson concur . Watson also observes , \" Because of the presumption of White being better , the juncture of the game at which Black frees his game or neutralizes White 's plans has often been automatically assumed to give him equality , even though in dynamic openings , the exhaustion of White 's initiative very often means that Black has seized it with advantage . \""
+  },
+  {
+    "text": "Rowson argues that both White and Black have certain advantages :"
+  },
+  {
+    "text": "Rowson cites as an example of the last phenomenon the well @-@ regarded Zaitsev Variation of the Ruy Lopez . After 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5 @.@ 0 @-@ 0 Be7 6.Re1 b5 7.Bb3 0 @-@ 0 8.c3 d6 9.h3 Bb7 10.d4 Re8 ( initiating the Zaitsev Variation ) , White can repeat moves once with 11.Ng5 Rf8 12.Nf3. This puts Black in an awkward situation , since he must either ( a ) insist on the Zaitsev with 12 ... Re8 , which allows White to choose whether to draw by threefold repetition with 13.Ng5 Rf8 14.Nf3 , or play on with a different move , or ( b ) play a different ( and possibly inferior ) variation by playing something other than 12 ... Re8 ."
+  },
+  {
+    "text": "Watson also observes , \" Similarly , the Dutch Defence looks particularly sterile when White achieves the reversed positions a tempo up ( it turns out that he has nothing useful to do ! ) ; and indeed , many standard Black openings are not very inspiring when one gets them as White , tempo in hand . \" GM Alex Yermolinsky likewise notes that GM Vladimir Malaniuk , a successful exponent of the Leningrad Dutch ( 1.d4 f5 2.g3 g6 ) at the highest levels , \" once made a deep impression on me by casually dismissing someone 's suggestion that he should try 1.f4 as White . He smiled and said , ' That extra move 's gonna hurt me . ' \""
+  },
+  {
+    "text": "Watson concludes that ( a ) \" most moves have disadvantages as well as advantages , so an extra move is not always an unqualified blessing \" ; ( b ) \" with his extra information about what White is doing , Black can better react to the new situation \" ; and ( c ) because a draw is likely to be more acceptable to Black than to White , White is apt to avoid lines that allow drawish simplifications , while Black may not object to such lines ."
+  },
+  {
+    "text": "It is often difficult for White to prove an advantage in symmetrical opening lines . As GM Bent Larsen wrote , annotating a game that began 1.c4 c5 2.b3 b6 , \" In symmetrical openings , White has a theoretical advantage , but in many of them it is only theoretical . \" GM Andrew Soltis wrote in 2008 that he hates playing against the symmetrical Petroff 's Defense ( 1.e4 e5 2.Nf3 Nf6 ) , and accordingly varies with 2.Nc3 , the Vienna Game . However , there too he has been unable to find a way to an advantage after the symmetrical 2 ... Nc6 3.g3 g6 4.Bg2 Bg7 , or after 3.Nf3 Nf6 ( transposing to the Four Knights Game ) 4.Bb5 Bb4 5 @.@ 0 @-@ 0 0 @-@ 0 6.d3 d6 7.Bg5 Bg4 8.Nd5 Nd4 9.Nxb4 Nxb5 , or 7.Ne2 Ne7 8.c3 Ba5 9.Ng3 c6 10.Ba4 Ng6 11.d4 d5 , when 12.exd5 ? ! e4 ! may even favor Black ."
+  },
+  {
+    "text": "Hans @-@ Joachim Bremermann , a professor of mathematics and biophysics at the University of California at Berkeley , further argued in a 1965 paper that the \" speed , memory , and processing capacity of any possible future computer equipment are limited by certain physical barriers : the light barrier , the quantum barrier , and the thermodynamical barrier . These limitations imply , for example , that no computer , however constructed , will ever be able to examine the entire tree of possible move sequences of the game of chess . \" Nonetheless , Bremermann did not foreclose the possibility that a computer would someday be able to solve chess . He wrote , \" In order to have a computer play a perfect or nearly perfect game [ of chess ] it will be necessary either to analyze the game completely ... or to analyze the game in an approximate way and combine this with a limited amount of tree searching . ... A theoretical understanding of such heuristic programming , however , is still very much wanting . \""
+  },
+  {
+    "text": "Federer was raised as a Roman Catholic and met Pope Benedict XVI while playing the 2006 Internazionali BNL d 'Italia tournament in Rome . Like all male Swiss citizens , Federer was subject to compulsory military service in the Swiss Armed Forces . However , in 2003 he was ruled \" unsuitable \" and was subsequently not required to fulfill his military obligation . Instead , he served in the civil protection force and was required to pay 3 % of his taxable income as an alternative . He grew up supporting F.C. Basel and the Swiss National Football Team . Federer also credits the range of sports he played as a child — he also played badminton and basketball — for his hand @-@ eye coordination ."
+  },
+  {
+    "text": "Federer won three ATP Masters Series 1000 events , one was on clay in Hamburg , and the other two were on hard surfaces at Indian Wells and in Canada . Federer took the ATP 500 series event at Dubai and wrapped up the year by winning the year @-@ end championships for the second time . He also won his first tournament on home soil by capturing the Swiss Open in Gstaad . His 11 singles titles were the most of any player in two decades , and his record of 74 – 6 was the best since Ivan Lendl in 1986 . He improved his year @-@ end ranking to world No. 1 for the first time ."
+  },
+  {
+    "text": "The 2006 season was statistically the best season of Federer 's career , as well as one of the greatest seasons of any player in tennis history . In December 2011 , Stephen Tignor , chief editorial writer for Tennis.com , ranked Federer 's 2006 season as the second @-@ greatest season of all time during the Open Era , behind only Rod Laver 's Grand Slam year of 1969 . Federer won 12 singles titles ( the most of any player since John McEnroe in 1984 ) and had a match record of 92 – 5 ( the most wins since Ivan Lendl in 1982 ) . Federer reached the finals in an astounding 16 of the 17 tournaments he entered during the season ."
+  },
+  {
+    "text": "During the clay season , Federer 's victory in the Hamburg Masters final was particularly impressive , as it snapped Rafael Nadal 's 81 @-@ match winning streak on clay , an Open @-@ Era record . Federer turned the match around from a set down to sweep 12 of the final 14 games , including a final set bagel . At the French Open , some anticipated that Federer could become the first man in almost 40 years to hold all four majors simultaneously , having just resoundingly defeated young rival Nadal on clay entering the tournament . However , in a repeat of the previous year Federer played a tough four @-@ set final against Nadal , but was undone by going 1 / 18 on break @-@ point chances ."
+  },
+  {
+    "text": "At Wimbledon , Federer entered the tournament not only as the four @-@ time defending champion , but also riding a 48 @-@ match winning streak on grass . Once again , he defeated Rafael Nadal for a second consecutive year in the final , this time in a thrilling five @-@ set encounter that many analysts hailed as the greatest Wimbledon final since 1980 . Victory at Wimbledon equaled him with Björn Borg for the record of five consecutive championships at the All England Club ."
+  },
+  {
+    "text": "Federer reached the final in Montreal before playing a young and relatively unknown Serbian named Novak Djokovic . Djokovic proved his potential by stunning the world No. 1 in a final @-@ set tiebreaker upset . Federer rebounded in Cincinnati to capture his fifth title of the year . Federer entered the US Open as the three @-@ time defending champion and faced Djokovic in the final . This time , Federer prevailed in a close straight @-@ set match . Victory in New York moved him ahead of Laver and Borg for third on the all @-@ time list of major championship victories . Throughout the tournament , the American press labeled him Darth Federer for his all @-@ black attire ( which included tuxedo @-@ striped shorts ) and the tournament played The Imperial March from Star Wars when he was announced onto the court for each of his matches . He would close out the year with victories in Basel and the Year End Championships in Shanghai ."
+  },
+  {
+    "text": "The 2011 season , although great by most players ' standards , was a lean year for Federer . He was defeated in straight sets in the semifinals of the 2011 Australian Open by eventual champion Novak Djokovic , marking the first time since July 2003 that he did not hold any of the four major titles . In the French Open semifinals , Federer ended Djokovic 's undefeated streak of 43 consecutive wins with a stunning four @-@ set victory . However , Federer then lost in the final to Rafael Nadal . At Wimbledon , Federer advanced to his 29th consecutive Grand Slam quarterfinal , but lost to Jo @-@ Wilfried Tsonga . It marked the first time in his career that he had lost a Grand Slam tournament match after winning the first two sets ."
+  },
+  {
+    "text": "The 2012 season was a return to excellence for Federer . He had his most match wins since 2006 and his highest winning percentage and number of titles won since 2007 ."
+  },
+  {
+    "text": "Federer reached the semifinal of the 2012 Australian Open , setting up a 27th career meeting with Nadal , a match he lost in four tight sets ."
+  },
+  {
+    "text": "Federer went on to compete at the Madrid Masters on the new blue clay surface , where he beat Tomáš Berdych in the final , thus regaining the world No. 2 ranking from Rafael Nadal . In the French Open , Federer made the semifinals before losing to Djokovic ."
+  },
+  {
+    "text": "Four weeks after the Wimbledon final , Federer again faced Murray on the Wimbledon centre court , this time for the final of the 2012 Summer Olympics . This came after an epic 4 @-@ hour 26 @-@ minute semifinal against Juan Martin del Potro of Argentina that Federer won 19 – 17 in the third and final set . He lost to Murray in straight sets in the final , winning a silver medal for his country ."
+  },
+  {
+    "text": "In June , Federer announced that after the end of his third term , he would resign as President of the ATP Players Council , a position he had held since 2008 . At the Halle Open , Federer reached both the singles and the doubles finals and won his seventh Halle singles title , beating Alejandro Falla in the final . At Wimbledon , Federer reached a record ninth final , but he defeated by Djokovic in an epic five @-@ set match ."
+  },
+  {
+    "text": "Federer made the final of the Canadian Open , but was defeated by Jo @-@ Wilfried Tsonga . Federer defeated Spain 's David Ferrer in three sets to capture his sixth Cincinnati crown and his 22nd ATP World Tour Masters 1000 title , his first since Cincinnati 2012 . He then reached the semifinals at the US Open , but lost in straight sets to eventual champion Marin Čilić . At the Davis Cup semifinals , Federer won both of his singles matches against Italy in straight sets and hence led Switzerland to the final for the first time since 1992 ."
+  },
+  {
+    "text": "He defeated Andy Murray and Novak Djokovic in straight sets to win the Cinicinnati Masters for the seventh time . This marked the first time that Federer had beaten the top 2 players in the world at the same tournament . At the US Open , he advanced to his first final there since 2009 without dropping a set , including a win over Stan Wawrinka in the semifinals . In the final , he was once again defeated by top seed Djokovic in four sets . At the Swiss Indoors tournament in Basel , Federer won his sixth singles title of the year , and his 88th ATP title , defeating his old rival Rafael Nadal in the final . It was the seventh time he had captured his hometown tournament ."
+  },
+  {
+    "text": "They held the top two rankings on the ATP Tour from July 2005 until 17 August 2009 , when Nadal fell to world No. 3 ( Andy Murray became the new No. 2 ) . They are the only pair of men to have ever finished six consecutive calendar years at the top . Federer was ranked No. 1 for a record 237 consecutive weeks beginning in February 2004 . Nadal , who is five years younger , ascended to No. 2 in July 2005 and held this spot for a record 160 consecutive weeks , before surpassing Federer in August 2008 ."
+  },
+  {
+    "text": "Federer and Djokovic have met 45 times with Djokovic leading 23 – 22 wins . They are tied 17 – 17 on hard @-@ courts and 4 – 4 on clay while Djokovic leads 2 – 1 on grass . The Federer – Djokovic rivalry is the largest rivalry in men 's Grand Slam tournament history with a record 15 matches played against each other with Djokovic leading 9 – 6 . Djokovic is the only player besides Nadal to defeat Federer in consecutive Grand Slam tournaments ( 2010 US Open and 2011 Australian Open , also 2015 Wimbledon , US Open and 2016 Australian Open ) , and the only player besides Nadal and Murray who has double @-@ figure career wins over Federer . Djokovic is one of two players ( the other again being Nadal ) currently on tour to have defeated Federer in straight sets at a Grand Slam event ( 2008 Australian Open , 2011 Australian Open , 2012 French Open ) and the only player to do so three times . Of their 45 meetings , 15 have reached a deciding set ."
+  },
+  {
+    "text": "Federer and Andy Murray have met 25 times with Federer leading 14 – 11 . Federer leads 12 – 10 on hard courts , and 2 – 1 on grass . They have never met on clay . The two have met six times at the Grand Slam tournament level , the first three times in the finals , Federer winning all three of these matches ; at the 2008 US Open and the 2010 Australian Open , both of which he won in straight sets , and at the 2012 Wimbledon Championships in which Murray took the opening set , but went on to lose in four sets . However , Murray won their encounter in the semifinals of the 2013 Australian Open , defeating the Swiss for the first time at a Grand slam tournament in five sets . At the 2014 Australian Open , Federer reversed that result , defeating Murray in four sets in the quarterfinals . The most recent meeting between the two in a Major was in the semifinals of the 2015 Wimbledon Championships , where a dominant Federer triumphed in straight sets ."
+  },
+  {
+    "text": "One of Federer 's longstanding rivalries was with American Andy Roddick . Roddick lost his world No. 1 ranking to Federer after Federer won his first Australian Open in 2004 . Federer and Roddick met on 24 occasions , including four Grand Slam event finals ( three at Wimbledon and one at the US Open – all won by Federer ) . Federer 's record is overall 21 – 3 . Roddick himself said it was not much of a rivalry , being so one @-@ sided ."
+  },
+  {
+    "text": "Federer has won the ATPWorldTour.com Fans ' Favourite Award a record 13 times consecutively ( 2003 – 2015 ) and the Stefan Edberg Sportsmanship Award ( voted for by the players ) a record 11 times ( 2004 – 2009 , 2011 – 2015 ) , both being awards indicative of respect and popularity . He also won the Arthur Ashe Humanitarian of the Year Award twice in 2006 and 2013 . He was named the Laureus World Sportsman of the Year for a record four consecutive years ( 2005 – 2008 ) . Federer is at times referred to as the Federer Express , shortened to Fed Express or FedEx , and the Swiss Maestro , or just Maestro ."
+  },
+  {
+    "text": "Federer plays with a single @-@ handed backhand , which gives him great variety . He employs the slice , occasionally using it to lure his opponent to the net and deliver a passing shot . Federer can also fire topspin winners and possesses a ' flick ' backhand with which he can generate pace with his wrist ; this is usually used to pass the opponent at the net . His serve is difficult to read because he always uses a similar ball toss , regardless of what type of serve he is going to hit and where he aims to hit it , and turns his back to his opponents during his motion . He is often able to produce big serves on key points during a match . His first serve is typically around 200 km / h ( 125 mph ) ; however , he is capable of serving at 220 km / h ( 137 mph ) . Federer is also accomplished at serve and volleying , and employed this tactic frequently in his early career ."
+  },
+  {
+    "text": "Federer has a contract with Nike footwear and apparel . For the 2006 championships at Wimbledon , Nike designed a jacket emblazoned with a crest of three tennis racquets , symbolising the three Wimbledon Championships he had previously won , and which was updated the next year with four racquets after he won the Championship in 2006 . In Wimbledon 2008 and again in 2009 , Nike continued this trend by making him a personalized cardigan which also has his own logo , an R and F joined together ."
+  },
+  {
+    "text": "Federer is one of the highest @-@ earning athletes in the world . He is listed at number five on Forbes World 's Highest Paid Athletes list . As of 2013 , he remains the top earner in tennis with ten endorsement deals . He makes 40 to 50 million euros a year from prize money and endorsements from Nike and the Swiss companies Nationale Suisse , Credit Suisse , Rolex , Lindt , and Jura Elektroapparate . In 2010 , his endorsement by Mercedes @-@ Benz China was extended into a global partnership deal . His other sponsors include Gillette , Wilson , and Moët & Chandon . Previously , he was an ambassador for NetJets , Emmi AG , and Maurice Lacroix ."
+  },
+  {
+    "text": "These records were attained in the Open Era of tennis ."
+  },
+  {
+    "text": "Roger Federer at the Association of Tennis Professionals"
+  },
+  {
+    "text": "The history of artificial intelligence ( AI ) began in antiquity , with myths , stories and rumors of artificial beings endowed with intelligence or consciousness by master craftsmen ; as Pamela McCorduck writes , AI began with \" an ancient wish to forge the gods . \""
+  },
+  {
+    "text": "The seeds of modern AI were planted by classical philosophers who attempted to describe the process of human thinking as the mechanical manipulation of symbols . This work culminated in the invention of the programmable digital computer in the 1940s , a machine based on the abstract essence of mathematical reasoning . This device and the ideas behind it inspired a handful of scientists to begin seriously discussing the possibility of building an electronic brain ."
+  },
+  {
+    "text": "In 1950 Alan Turing published a landmark paper in which he speculated about the possibility of creating machines that think . He noted that \" thinking \" is difficult to define and devised his famous Turing Test . If a machine could carry on a conversation ( over a teleprinter ) that was indistinguishable from a conversation with a human being , then it was reasonable to say that the machine was \" thinking \" . This simplified version of the problem allowed Turing to argue convincingly that a \" thinking machine \" was at least plausible and the paper answered all the most common objections to the proposition . The Turing Test was the first serious proposal in the philosophy of artificial intelligence ."
+  },
+  {
+    "text": "Many early AI programs used the same basic algorithm . To achieve some goal ( like winning a game or proving a theorem ) , they proceeded step by step towards it ( by making a move or a deduction ) as if searching through a maze , backtracking whenever they reached a dead end . This paradigm was called \" reasoning as search \" ."
+  },
+  {
+    "text": "Newell and Simon tried to capture a general version of this algorithm in a program called the \" General Problem Solver \" . Other \" searching \" programs were able to accomplish impressive tasks like solving problems in geometry and algebra , such as Herbert Gelernter 's Geometry Theorem Prover ( 1958 ) and SAINT , written by Minsky 's student James Slagle ( 1961 ) . Other programs searched through goals and subgoals to plan actions , like the STRIPS system developed at Stanford to control the behavior of their robot Shakey ."
+  },
+  {
+    "text": "An important goal of AI research is to allow computers to communicate in natural languages like English . An early success was Daniel Bobrow 's program STUDENT , which could solve high school algebra word problems ."
+  },
+  {
+    "text": "1958 , H. A. Simon and Allen Newell : \" within ten years a digital computer will be the world 's chess champion \" and \" within ten years a digital computer will discover and prove an important new mathematical theorem . \""
+  },
+  {
+    "text": "1970 , Marvin Minsky ( in Life Magazine ) : \" In from three to eight years we will have a machine with the general intelligence of an average human being . \""
+  },
+  {
+    "text": "Critics of the logical approach noted , as Dreyfus had , that human beings rarely used logic when they solved problems . Experiments by psychologists like Peter Wason , Eleanor Rosch , Amos Tversky , Daniel Kahneman and others provided proof . McCarthy responded that what people do is irrelevant . He argued that what is really needed are machines that can solve problems — not machines that think as people do ."
+  },
+  {
+    "text": "In the 1980s a form of AI program called \" expert systems \" was adopted by corporations around the world and knowledge became the focus of mainstream AI research . In those same years , the Japanese government aggressively funded AI with its fifth generation computer project . Another encouraging event in the early 1980s was the revival of connectionism in the work of John Hopfield and David Rumelhart . Once again , AI had achieved success ."
+  },
+  {
+    "text": "In 1980 , an expert system called XCON was completed at CMU for the Digital Equipment Corporation . It was an enormous success : it was saving the company 40 million dollars annually by 1986 . Corporations around the world began to develop and deploy expert systems and by 1985 they were spending over a billion dollars on AI , most of it to in @-@ house AI departments . An industry grew up to support them , including hardware companies like Symbolics and Lisp Machines and software companies such as IntelliCorp and Aion ."
+  },
+  {
+    "text": "These successes were not due to some revolutionary new paradigm , but mostly on the tedious application of engineering skill and on the tremendous power of computers today . In fact , Deep Blue 's computer was 10 million times faster than the Ferranti Mark 1 that Christopher Strachey taught to play chess in 1951 . This dramatic increase is measured by Moore 's law , which predicts that the speed and memory capacity of computers doubles every two years . The fundamental problem of \" raw computer power \" was slowly being overcome ."
+  },
+  {
+    "text": "Algorithms originally developed by AI researchers began to appear as parts of larger systems . AI had solved a lot of very difficult problems and their solutions proved to be useful throughout the technology industry , such as data mining , industrial robotics , logistics , speech recognition , banking software , medical diagnosis and Google 's search engine ."
+  },
+  {
+    "text": "Many researchers in AI in 1990s deliberately called their work by other names , such as informatics , knowledge @-@ based systems , cognitive systems or computational intelligence . In part , this may be because they considered their field to be fundamentally different from AI , but also the new names help to procure funding . In the commercial world at least , the failed promises of the AI Winter continue to haunt AI research , as the New York Times reported in 2005 : \" Computer scientists and software engineers avoided the term artificial intelligence for fear of being viewed as wild @-@ eyed dreamers . \""
+  },
+  {
+    "text": "In 1968 , Arthur C. Clarke and Stanley Kubrick had imagined that by the year 2001 , a machine would exist with an intelligence that matched or exceeded the capability of human beings . The character they created , HAL 9000 , was based on a belief shared by many leading AI researchers that such a machine would exist by the year 2001 ."
+  }
+]
