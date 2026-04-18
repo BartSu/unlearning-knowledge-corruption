@@ -171,17 +171,20 @@
             }
         }
         \node[above] at (10*\s/2, 0.1) {评测簇 $e$ →};
-        \node[rotate=90, above] at (-0.15, -10*\s/2) {unlearn 簇 $m$ →};
+        \node[rotate=90, above] at (-0.18, -10*\s/2) {unlearn 簇 $m$ →};
 
-        \draw[-Latex, thick] (5*\s+2.2, 0.3) -- node[above, sloped]
-            {\textbf{对角线 $m=e$}} (3.5*\s, -3.5*\s+\s*0.5);
-        \node[right, align=left] at (5*\s+2.2, 0.3)
-            {\textbf{L1} = train 分片\\ \textbf{L2} = val / test 分片};
+        \node[right, align=left, font=\small] at (10*\s+0.7, -0.8)
+            {\textbf{对角线}（橙）\\
+             $m = e$\\
+             \textbf{L1} = train\\
+             \textbf{L2} = val / test};
+        \draw[-Latex, thick, mLightBrown] (10*\s+0.7, -0.8) -- (3.0*\s+\s/2, -3.0*\s+\s/2);
 
-        \draw[-Latex, thick] (5*\s+2.2, -1.5) -- node[above, sloped]
-            {\textbf{非对角线 $m\neq e$}} (6.5*\s, -3.5*\s+\s*0.5);
-        \node[right] at (5*\s+2.2, -1.5)
-            {\textbf{L3} = test 分片（别的簇）};
+        \node[right, align=left, font=\small] at (10*\s+0.7, -3.0)
+            {\textbf{非对角线}（灰）\\
+             $m \neq e$\\
+             \textbf{L3} = test};
+        \draw[-Latex, thick, mDarkTeal] (10*\s+0.7, -3.0) -- (7*\s+\s/2, -3*\s+\s/2);
     \end{tikzpicture}
 \end{frame}
 
@@ -484,14 +487,12 @@ python 4.audit_experiments.py         # ⇒ audit/audit_summary.json
     \footnotesize
     \begin{tabular}{@{}ll@{}}
         \toprule
-        Artefact & 路径 \\
+        产物 & 路径 \\
         \midrule
-        Cross-eval ppl 明细 & \texttt{2.extract-ppl/wikitext\_cross\_metrics\_detail.json} \\
-        三层 corruption 汇总 & \texttt{2.extract-ppl/corruption\_summary.json} \\
-        几何 per-sample 预测 & \texttt{4.regression-predictor/geometry/geometry\_results.json} \\
-        审计器 LOO 预测 & \texttt{4.regression-predictor/audit/audit\_summary.json} \\
-        每 forget set L1/L2/L3 & \texttt{audit/part1\_corruption\_profile.csv} \\
-        审计特征表 & \texttt{audit/part2\_forget\_features.csv} \\
+        三层 corruption       & \texttt{2.extract-ppl/corruption\_summary.json} \\
+        审计 LOO 预测          & \texttt{4.regression-predictor/audit/audit\_summary.json} \\
+        每 forget set profile  & \texttt{audit/part1\_corruption\_profile.csv} \\
+        审计特征               & \texttt{audit/part2\_forget\_features.csv} \\
         \bottomrule
     \end{tabular}
 \end{frame}
