@@ -9,6 +9,21 @@ data/wikitext_clusters_hdbscan/
 data/wikitext_clusters_hdbscan_export/
 data/wikitext_clusters_hdbscan_summary/
 data/wikitext_*
+
+# whitelist the 10 representative triplets used by audit reproduce
+!data/wikitext_hdbscan_triplets/
+data/wikitext_hdbscan_triplets/triplet_*
+!data/wikitext_hdbscan_triplets/triplet_001/
+!data/wikitext_hdbscan_triplets/triplet_011/
+!data/wikitext_hdbscan_triplets/triplet_021/
+!data/wikitext_hdbscan_triplets/triplet_031/
+!data/wikitext_hdbscan_triplets/triplet_041/
+!data/wikitext_hdbscan_triplets/triplet_051/
+!data/wikitext_hdbscan_triplets/triplet_061/
+!data/wikitext_hdbscan_triplets/triplet_071/
+!data/wikitext_hdbscan_triplets/triplet_081/
+!data/wikitext_hdbscan_triplets/triplet_091/
+!data/wikitext_hdbscan_triplets/run_manifest.json
 data/__pycache__/
 data/bak/
 
