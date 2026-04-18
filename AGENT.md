@@ -17,10 +17,11 @@
 5. 更新 `PROGRESS.md`：
    - 勾选已完成的条目。
    - 在 **迭代日志** 下追加一条记录，包含：迭代编号、任务、结果、产物、下一步。
-6. 若本次迭代产生了新的实验数字（即 `4.regression-predictor/audit/` 或其他 artefact 被刷新），必须同步：
-   - 更新 `z-doc/README-CN.md` 与 `z-doc/slides.tex` 中所有引用的数字，使其与最新 `audit_summary.json` 一致。
-   - 在 `z-doc/` 目录下运行 `xelatex -interaction=nonstopmode slides.tex`（至少两遍以保证交叉引用），重新生成 `z-doc/slides.pdf`。
-   - 将 `slides.tex` 与 `slides.pdf` 一并纳入提交。
+6. **`README-CN.md` 与 `slides.tex` 必须始终同步**（用户只看 slides 讲解）：
+   - 任何对 `z-doc/README-CN.md` 的内容 / 数字 / 叙述结构改动，必须在 `z-doc/slides.tex` 的对应幕 / 帧做镜像更新（可保留精简化措辞，但论证骨架与关键数字须一致）。
+   - 新实验数字刷新时（`4.regression-predictor/audit/` 等 artefact 更新），README 与 slides 中所有引用均须刷新。
+   - 任一文件改动后，在 `z-doc/` 下运行 `xelatex -interaction=nonstopmode slides.tex`（至少两遍以保证交叉引用），重新生成 `z-doc/slides.pdf`。
+   - 将 `slides.tex` / `README-CN.md` / `slides.pdf` 一并纳入提交。
 7. 使用简短的提交信息提交更改（禁止使用 `--no-verify`）。
 
 ## 任务选择规则
