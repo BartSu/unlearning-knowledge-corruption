@@ -26,7 +26,7 @@ Ralph agent：每次迭代开始时阅读此文件，结束时更新此文件。
 ### 阶段 5 — 结果汇报
 - [x] 重新生成 `z-doc/slides.tex` 中引用的所有图表
 - [x] 使用最新结果更新 `z-doc/README-CN.md`（已核对，数字与 audit_summary.json 一致）
-- [ ] 在全新克隆上完成最终端到端演练
+- [x] 在全新克隆上完成最终端到端演练
 
 ## 迭代日志
 
@@ -37,6 +37,12 @@ Ralph agent：每次迭代开始时阅读此文件，结束时更新此文件。
 - 产物：<路径、commit 哈希>
 - 下一步：<下一个任务 id>
 -->
+
+### 迭代 4 — 2026-04-18
+- 任务：阶段 5 —— 在全新克隆上完成最终端到端演练
+- 结果：pass。`git clone` 本仓至 `/tmp/fresh`，运行 `scripts/e2e_fresh_clone.sh` 顺序执行 analyze_corruption → corruption_from_geometry → audit_experiments → make_figures。为使得 fresh clone 能从 §9 步骤 1 起跑通（不重 unlearn），whitelist 并纳入了核心 artefact：`2.extract-ppl/{wikitext_cross_metrics_detail,corruption_summary}.json`、`4.regression-predictor/{audit,geometry}/{*.csv,*.json}`、`1.data-preparation/data/wikitext_hdbscan_triplets/{run_manifest.json, triplet_0[01-91]/}`（10 代表 triplet，合计 ≈1.2 MB）。fresh clone 输出的 L1/L2/L3 geo-mean、LOO R²/ρ、storm top-1、coverage ρ=−0.42 全部与主仓一致。
+- 产物：`scripts/e2e_fresh_clone.sh`；`2.extract-ppl/.gitignore`、`4.regression-predictor/.gitignore`、`1.data-preparation/.gitignore` 更新；新增 artefact 与 triplet 数据纳入 git。
+- 下一步：阶段 5 全部完成。后续推进阶段 4 的留出 checkpoint R²/MAE、阶段 1–3 的补完。
 
 ### 迭代 3 — 2026-04-18
 - 任务：阶段 5 —— 重新生成 `z-doc/slides.tex` 中引用的所有图表
