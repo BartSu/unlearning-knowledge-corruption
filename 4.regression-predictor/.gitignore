@@ -4,3 +4,9 @@ gb/
 *.csv
 *.json
 __pycache__/
+
+# whitelist published artefacts for fresh-clone reproduce
+!audit/*.csv
+!audit/*.json
+!geometry/*.csv
+!geometry/*.json

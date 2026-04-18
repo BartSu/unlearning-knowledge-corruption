@@ -1,0 +1,52 @@
+{
+  "layer_headline": {
+    "L1_forget": {
+      "n": 500,
+      "geo_mean_ratio": 1.7618703778973033,
+      "mean_log": 0.5663759594829,
+      "pct_up_10": 95.6,
+      "pct_up_2x": 33.2
+    },
+    "L2_locality": {
+      "n": 1000,
+      "geo_mean_ratio": 1.290334062394755,
+      "mean_log": 0.2549011479451351,
+      "pct_up_10": 82.8,
+      "pct_up_2x": 3.4000000000000004
+    },
+    "L3_spillover": {
+      "n": 4500,
+      "geo_mean_ratio": 1.1584923300132075,
+      "mean_log": 0.1471194442496528,
+      "pct_up_10": 61.6,
+      "pct_up_2x": 0.022222222222222223
+    }
+  },
+  "audit_predictor": {
+    "geo_L1_forget": {
+      "r2": 0.4426256127918826,
+      "rmse": 0.2252276359813882,
+      "spearman_rho": 0.6242424242424242,
+      "top1_match": 1,
+      "top3_overlap": 2
+    },
+    "geo_L2_locality": {
+      "r2": 0.40993343159130124,
+      "rmse": 0.14476188882716354,
+      "spearman_rho": 0.6242424242424242,
+      "top1_match": 0,
+      "top3_overlap": 2
+    },
+    "geo_L3_spillover": {
+      "r2": 0.18977097880264782,
+      "rmse": 0.0559077977020903,
+      "spearman_rho": 0.6121212121212121,
+      "top1_match": 0,
+      "top3_overlap": 1
+    }
+  },
+  "coverage_vs_spillover": {
+    "spearman_rho": -0.4233290200393297,
+    "pearson_r": -0.19769833981972149
+  }
+}
