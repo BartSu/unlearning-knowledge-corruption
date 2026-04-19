@@ -2,9 +2,32 @@
 
 Ralph agent：每次迭代开始时阅读此文件，结束时更新此文件。
 
-## 任务列表
+## 任务目标
+迭代推进 LLM 遗忘（unlearning）研究流水线：
+**数据准备 → unlearn 模型 → 困惑度提取 → 几何分析 → forget-set audit**。
+最终目标：把 unlearning benchmarking 重构为 *forget-set 审计*（从"每次都跑 unlearn"到"先粗筛预警、再真跑 top-k"）。
 
-流水线：**数据准备 → unlearn 模型 → 困惑度提取 → 几何分析 → forget-set audit**（+ 横向：结果汇报）。
+## 背景信息
+- 仓库根目录：`/media/volume/llm/unlearning`
+- 五个流水线阶段与编号目录的对应关系：
+  1. **数据准备**：`1.data-preparation/` —— WikiText-103 → HDBSCAN 10 簇 → 100 triplets（每簇 10 个）
+  2. **Unlearn 模型**：`1.data-preparation/unlearn/` —— GradAscent，每 forget set 一个 checkpoint
+  3. **困惑度提取**：`2.extract-ppl/` —— 10×10 cross-PPL，输出 L1/L2/L3 三层 ground truth
+  4. **几何分析**：`3.feature-engineering/` + `4.regression-predictor/geometry/` —— forget-set 内禀几何特征（12 维）
+  5. **Forget-set audit**：`4.regression-predictor/audit/` —— Ridge LOO，输出三层排序预测
+- **研究定位**（与 `z-doc/slides.tex` 保持一致）：三层 corruption view 是 Act I 的观察结果；forget-set audit（"便宜的粗筛预警器"）是 Act II 的方法论提议。所有代码、文档、slides 的叙事都应围绕这两幕展开。
+
+## 当前瓶颈
+**阶段 2（unlearn 模型）**：100 个 triplet 中仅跑了 10 个代表，$n$ 扩到 100 是升级审计器 $\rho$ 置信度的必要前提。
+
+## 文档同步规则
+`z-doc/README-CN.md` / `slides.tex` / `slides-en.tex` **三份必须始终同步**（用户只看 slides 讲解）：
+- 任何内容 / 数字 / 叙述结构改动，三份须做镜像更新（slides-en 可保留英文措辞，但论证骨架与关键数字须一致）。
+- 新实验数字刷新时（`4.regression-predictor/audit/` 等 artefact 更新），三份中所有引用均须刷新。
+- 任一 `.tex` 改动后，在 `z-doc/` 下运行 `xelatex -interaction=nonstopmode slides.tex` 与 `xelatex -interaction=nonstopmode slides-en.tex`（各至少两遍以保证交叉引用），重新生成对应 PDF。
+- `slides.tex` / `slides-en.tex` / `README-CN.md` / `slides.pdf` / `slides-en.pdf` 一并纳入提交。
+
+## 任务列表
 
 ### 阶段 1 — 数据准备（`1.data-preparation/`）
 - [x] WikiText-103 → HDBSCAN 10 簇 → 100 triplets 已生成（`data/wikitext_hdbscan_triplets/triplet_001..100`）
