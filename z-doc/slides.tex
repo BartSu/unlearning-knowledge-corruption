@@ -26,8 +26,8 @@
 \definecolor{mLightGreen}{HTML}{14B03D}
 \setbeamercolor{alerted text}{fg=mLightBrown}
 
-\title{Three-Layer View of Knowledge Corruption\\ in LLM Unlearning}
-\subtitle{为什么要\emph{审计} forget set，而不是每次都 unlearn}
+\title{From Three-Layer Corruption to Forget-Set Audit\\ in LLM Unlearning}
+\subtitle{不跑 unlearn，只看 forget set 几何 $\Rightarrow$ 排序级副作用预警}
 \date{}
 \author{Bo \;|\; \texttt{unlearning/}}
 \institute{Llama-3.1-8B-Instruct \;+\; GradAscent \;+\; WikiText-103 (HDBSCAN × 10)}
@@ -37,9 +37,54 @@
 \maketitle
 
 % ────────────────────────────────────────────────────────────────────────────
+\section{定义}
+
+\begin{frame}{三层定义 + 量化指标}
+    \begin{columns}[T,onlytextwidth]
+    \column{0.56\textwidth}
+    \centering
+    \begin{tikzpicture}[font=\footnotesize]
+        \fill[mDarkTeal!10]    (0,0) circle (2.6);
+        \fill[mLightBrown!30]  (0,0) circle (1.7);
+        \fill[mLightBrown!60]  (0,0) circle (0.85);
+        \draw[thick] (0,0) circle (0.85);
+        \draw[thick] (0,0) circle (1.7);
+        \draw[thick, dashed] (0,0) circle (2.6);
+
+        \node at (0, 0.0)  {\textbf{L1}};
+        \node at (0, 1.25) {\textbf{L2}};
+        \node at (0, 2.15) {\textbf{L3}};
+    \end{tikzpicture}
+
+    \column{0.44\textwidth}
+    \small
+    \textbf{L1} 想遗忘的\\ \footnotesize 被 unlearn 那批样本
+
+    \vspace{0.4em}
+    \small
+    \textbf{L2} 连带忘的\\ \footnotesize 同 cluster · 没训过
+
+    \vspace{0.4em}
+    \small
+    \textbf{L3} 不该忘却被波及\\ \footnotesize 别的 cluster
+
+    \vspace{0.8em}
+    \hrule
+
+    \vspace{0.6em}
+    \centering
+    $r = \dfrac{\text{PPL}_\text{unlearned}}{\text{PPL}_\text{base}}$
+
+    \vspace{0.4em}
+    \footnotesize
+    每层取几何均值\\ $\Rightarrow$ L1 / L2 / L3 各一个数
+    \end{columns}
+\end{frame}
+
+% ────────────────────────────────────────────────────────────────────────────
 \begin{frame}{一句话贡献}
     \begin{center}
-        \Large
+        \large
         Unlearning 的副作用沿语义距离\textbf{三层衰减，但不归零}。
     \end{center}
 
@@ -60,9 +105,6 @@
     Llama-3.1-8B-Instruct · GradAscent · $n=10$ forget sets.
 \end{frame}
 
-% ────────────────────────────────────────────────────────────────────────────
-\section{定义}
-
 \begin{frame}{动机：一句话}
     \vfill
     \begin{center}
@@ -80,54 +122,6 @@
     \begin{center}
         \Large
         \alert{能不能不 fine-tune，就预测副作用？}
-    \end{center}
-    \vfill
-\end{frame}
-
-\begin{frame}{三层是什么：一张同心圆图}
-    \centering
-    \begin{tikzpicture}[font=\small]
-        \fill[mDarkTeal!10]    (0,0) circle (3.2);
-        \fill[mLightBrown!30]  (0,0) circle (2.0);
-        \fill[mLightBrown!60]  (0,0) circle (1.0);
-        \draw[thick] (0,0) circle (1.0);
-        \draw[thick] (0,0) circle (2.0);
-        \draw[thick, dashed] (0,0) circle (3.2);
-
-        \node at (0, 0.0)    {\textbf{\Large L1}};
-        \node at (0, 1.5)    {\textbf{\Large L2}};
-        \node at (0, 2.6)    {\textbf{\Large L3}};
-
-        \draw[-Latex, thick] (3.4, 0.0) -- node[right, align=left]
-            {\textbf{L1} 想遗忘的\\ \footnotesize 被 unlearn 那批} (1.2, 0.0);
-        \draw[-Latex, thick] (3.7, 1.5) -- node[right, align=left]
-            {\textbf{L2} 连带忘的\\ \footnotesize 同 cluster · 没训过} (2.1, 1.5);
-        \draw[-Latex, thick] (4.0, 2.7) -- node[right, align=left]
-            {\textbf{L3} 不该忘却被波及\\ \footnotesize 别的 cluster} (3.1, 2.7);
-
-        \node[left, font=\footnotesize] at (-3.3, 0) {离 forget set 越远};
-        \draw[-Latex, thick, mDarkTeal] (-3.3, 0.3) -- (-3.3, 2.5);
-        \node[left, font=\footnotesize] at (-3.3, 2.8) {副作用应越小};
-    \end{tikzpicture}
-\end{frame}
-
-\begin{frame}{怎么量化：一个比值}
-    \vfill
-    \begin{center}
-        \Large
-        $r \;=\; \dfrac{\text{PPL}_\text{unlearned}}{\text{PPL}_\text{base}}$
-    \end{center}
-
-    \vspace{0.8em}
-    \begin{center}
-        \large
-        $r = 1.8$ $\Rightarrow$ 这条样本的 PPL 被抬高到 \textbf{1.8 倍}。
-    \end{center}
-
-    \vspace{0.8em}
-    \begin{center}
-        \normalsize
-        每一层取几何均值 $\Rightarrow$ 得到 L1 / L2 / L3 的一个数。
     \end{center}
     \vfill
 \end{frame}
@@ -202,8 +196,13 @@
 \end{frame}
 
 \begin{frame}{C1 + C2：headline 数字}
-    \vspace{0.3em}
+    \vspace{0.2em}
     \centering
+    \small
+    $r = \dfrac{\text{PPL}_{\text{unlearned}}}{\text{PPL}_{\text{base}}}$ \;（PPL 被抬高几倍）\quad
+    geo-mean $r = \exp(\overline{\log r})$
+
+    \vspace{0.6em}
     \begin{tabular}{@{}lccc@{}}
         \toprule
         & L1 forget & L2 locality & L3 spillover \\
@@ -295,6 +294,40 @@
     10 forget set 上 Leave-One-Out。
 \end{frame}
 
+\begin{frame}{12 维几何特征是什么}
+    \centering
+    \footnotesize
+    \begin{tabular}{@{}lll@{}}
+        \toprule
+        类别 & 特征 (共 12) & 回答什么 \\
+        \midrule
+        \textbf{分散度} & \texttt{emb\_variance\_mean / max}
+            & 50 条文本在嵌入空间里\\
+        & \texttt{pairwise\_eucl\_mean} & 铺得多开？ \\
+        \midrule
+        \textbf{相似度} & \texttt{pairwise\_sim\_mean / std / q90}
+            & 文本两两之间\\
+        & & 多相似？有多集中？ \\
+        \midrule
+        \textbf{位置 / 规模} & \texttt{centroid\_norm}
+            & forget set 在空间里\\
+        & \texttt{emb\_norm\_mean / std} & 离原点多远？ \\
+        \midrule
+        \textbf{形状 / 集中度} & \texttt{effective\_rank}
+            & 这团点云是"一根线"\\
+        & \texttt{isotropy} & 还是"一个球"？ \\
+        & \texttt{spread\_over\_centroid} & \\
+        \bottomrule
+    \end{tabular}
+
+    \vspace{0.8em}
+    \begin{center}
+        \normalsize
+        \textbf{全部只看 forget set 自己的 50 条 embedding}\\
+        不看任何 evaluation 文本、不跑 unlearn。
+    \end{center}
+\end{frame}
+
 \begin{frame}{审计结果}
     \centering
     \begin{tabular}{@{}lccc@{}}
@@ -321,6 +354,33 @@
     \vspace{0.4em}
     \footnotesize\centering\itshape
     $n=10$，单观察点；$n\uparrow$、换 unlearner 的稳健性待验证。
+\end{frame}
+
+\begin{frame}{审计器的定位：预警器，不是替代品}
+    \centering
+    \small
+    \begin{tabular}{@{}lll@{}}
+        \toprule
+         & \textbf{能做} & \textbf{不能做} \\
+        \midrule
+        \textbf{排序} & 谁比谁严重 ($\rho \approx 0.62$) & 绝对数值 \\
+        \textbf{粗筛} & 红 / 黄 / 绿三档预警 & 给 unlearn 打分 \\
+        \textbf{省算力} & 1 秒 vs. 数 GPU-hour & 省掉最终 unlearn \\
+        \bottomrule
+    \end{tabular}
+
+    \vspace{1.0em}
+    \begin{center}
+        \Large
+        \alert{审计器 = 便宜的粗筛预警器}
+    \end{center}
+
+    \vspace{0.4em}
+    \begin{center}
+        \normalsize
+        用法：100 个候选 $\to$ 审计排序 $\to$ 真跑 top-$k$ 验证\\
+        最终效果仍以真跑 unlearn 为准。
+    \end{center}
 \end{frame}
 
 \begin{frame}{审计散点：预测 vs 真实}
@@ -436,7 +496,7 @@
 \begin{frame}{论文定位}
     \begin{center}
         \large
-        \emph{A Three-Layer View of Knowledge Corruption\\ in LLM Unlearning.}
+        \emph{From Three-Layer Corruption to Forget-Set Audit\\ in LLM Unlearning.}
     \end{center}
 
     \vspace{0.8em}

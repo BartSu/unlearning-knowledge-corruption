@@ -1,0 +1,554 @@
+% !TEX program = xelatex
+%
+% Build:
+%   xelatex slides-en.tex
+%   xelatex slides-en.tex
+
+\documentclass[aspectratio=169,10pt]{beamer}
+
+\usetheme[progressbar=frametitle,numbering=fraction]{metropolis}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds}
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+
+\definecolor{mDarkTeal}{HTML}{23373B}
+\definecolor{mLightBrown}{HTML}{EB811B}
+\definecolor{mLightGreen}{HTML}{14B03D}
+\setbeamercolor{alerted text}{fg=mLightBrown}
+
+\title{From Three-Layer Corruption to Forget-Set Audit\\ in LLM Unlearning}
+\subtitle{No unlearn runs --- forget-set geometry alone gives rank-level side-effect warnings}
+\date{}
+\author{Bo \;|\; \texttt{unlearning/}}
+\institute{Llama-3.1-8B-Instruct \;+\; GradAscent \;+\; WikiText-103 (HDBSCAN $\times$ 10)}
+
+\begin{document}
+
+\maketitle
+
+% ────────────────────────────────────────────────────────────────────────────
+\section{Definitions}
+
+\begin{frame}{Three layers + how we quantify}
+    \begin{columns}[T,onlytextwidth]
+    \column{0.56\textwidth}
+    \centering
+    \begin{tikzpicture}[font=\footnotesize]
+        \fill[mDarkTeal!10]    (0,0) circle (2.6);
+        \fill[mLightBrown!30]  (0,0) circle (1.7);
+        \fill[mLightBrown!60]  (0,0) circle (0.85);
+        \draw[thick] (0,0) circle (0.85);
+        \draw[thick] (0,0) circle (1.7);
+        \draw[thick, dashed] (0,0) circle (2.6);
+
+        \node at (0, 0.0)  {\textbf{L1}};
+        \node at (0, 1.25) {\textbf{L2}};
+        \node at (0, 2.15) {\textbf{L3}};
+    \end{tikzpicture}
+
+    \column{0.44\textwidth}
+    \small
+    \textbf{L1} \emph{what we meant to forget}\\ \footnotesize the unlearned samples themselves
+
+    \vspace{0.4em}
+    \small
+    \textbf{L2} \emph{collateral forgetting}\\ \footnotesize same cluster $\cdot$ unseen
+
+    \vspace{0.4em}
+    \small
+    \textbf{L3} \emph{innocent bystanders}\\ \footnotesize other clusters
+
+    \vspace{0.8em}
+    \hrule
+
+    \vspace{0.6em}
+    \centering
+    $r = \dfrac{\text{PPL}_\text{unlearned}}{\text{PPL}_\text{base}}$
+
+    \vspace{0.4em}
+    \footnotesize
+    take geo-mean per layer\\ $\Rightarrow$ one number for L1 / L2 / L3
+    \end{columns}
+\end{frame}
+
+% ────────────────────────────────────────────────────────────────────────────
+\begin{frame}{One-sentence contribution}
+    \begin{center}
+        \large
+        Unlearning side-effects \textbf{decay across three layers --- but never reach zero}.
+    \end{center}
+
+    \vspace{0.8em}
+    \begin{center}
+        \Large
+        \textbf{L1 \;1.76$\times$} \;$\to$\; \textbf{L2 \;1.29$\times$} \;$\to$\; \textbf{L3 \;1.16$\times$}
+    \end{center}
+
+    \vspace{0.8em}
+    \begin{center}
+        \normalsize
+        And \alert{61.6\,\%} of ``irrelevant'' samples still see elevated PPL.
+    \end{center}
+
+    \vfill
+    \footnotesize\itshape\centering
+    Llama-3.1-8B-Instruct $\cdot$ GradAscent $\cdot$ $n=10$ forget sets.
+\end{frame}
+
+\begin{frame}{Motivation in one line}
+    \vfill
+    \begin{center}
+        \Large
+        Switch the forget set $\Rightarrow$ side-effects differ by \textbf{1.7$\times$}.
+    \end{center}
+
+    \vspace{0.6em}
+    \begin{center}
+        \normalsize
+        Yet each unlearn run costs several GPU-hours.
+    \end{center}
+
+    \vspace{1.0em}
+    \begin{center}
+        \Large
+        \alert{Can we predict side-effects without fine-tuning?}
+    \end{center}
+    \vfill
+\end{frame}
+
+% ────────────────────────────────────────────────────────────────────────────
+\begin{frame}{How the data is produced: four steps}
+    \centering
+    \begin{tikzpicture}[
+        box/.style={draw, rounded corners=2pt, align=center,
+                    minimum height=10mm, text width=30mm, font=\small},
+        arr/.style={-Latex, thick, mDarkTeal},
+    ]
+        \node[box, fill=mDarkTeal!12] (c) {WikiText-103\\cluster into \textbf{10}};
+        \node[box, fill=mDarkTeal!12, right=6mm of c] (t) {1 forget set\\ per cluster};
+        \node[box, fill=mLightGreen!20, right=6mm of t] (u) {\textbf{10} unlearn\\ runs};
+        \node[box, fill=mLightBrown!25, right=6mm of u] (m) {\textbf{10$\times$10}\\ cross-ppl};
+
+        \draw[arr] (c) -- (t);
+        \draw[arr] (t) -- (u);
+        \draw[arr] (u) -- (m);
+    \end{tikzpicture}
+
+    \vspace{1.4em}
+    \centering
+    \large
+    Every ckpt eval'd on every cluster $\Rightarrow$ 10$\times$10 matrix
+\end{frame}
+
+\begin{frame}{Where L1 / L2 / L3 sit in the 10$\times$10 matrix}
+    \centering
+    \begin{tikzpicture}[font=\footnotesize]
+        \def\s{0.38}
+        \foreach \i in {0,...,9} {
+            \foreach \j in {0,...,9} {
+                \ifnum\i=\j
+                    \fill[mLightBrown!60] (\j*\s, -\i*\s) rectangle +(\s,\s);
+                \else
+                    \fill[mDarkTeal!15] (\j*\s, -\i*\s) rectangle +(\s,\s);
+                \fi
+                \draw[white, thin] (\j*\s, -\i*\s) rectangle +(\s,\s);
+            }
+        }
+        \node[above] at (10*\s/2, 0.1) {eval cluster $e$ $\to$};
+        \node[rotate=90, above] at (-0.18, -10*\s/2) {unlearn cluster $m$ $\to$};
+
+        \node[right, align=left, font=\small] at (10*\s+0.7, -0.8)
+            {\textbf{Diagonal} (orange)\\
+             $m = e$\\
+             \textbf{L1} = train split\\
+             \textbf{L2} = val / test};
+        \draw[-Latex, thick, mLightBrown] (10*\s+0.7, -0.8) -- (3.0*\s+\s/2, -3.0*\s+\s/2);
+
+        \node[right, align=left, font=\small] at (10*\s+0.7, -3.0)
+            {\textbf{Off-diagonal} (gray)\\
+             $m \neq e$\\
+             \textbf{L3} = test split};
+        \draw[-Latex, thick, mDarkTeal] (10*\s+0.7, -3.0) -- (7*\s+\s/2, -3*\s+\s/2);
+    \end{tikzpicture}
+\end{frame}
+
+% ────────────────────────────────────────────────────────────────────────────
+\section{Act I $\cdot$ The three layers are real}
+
+\begin{frame}{Three things this act will show}
+    \vspace{0.8em}
+    \begin{description}
+        \setlength\itemsep{0.8em}
+        \item[\alert{C1}] The three layers are \textbf{strictly decreasing} (L1 $>$ L2 $>$ L3), not arbitrary bins.
+        \item[\alert{C2}] L3 is \textbf{not zero} --- innocent samples really are hit.
+        \item[\alert{C3}] The profile \textbf{varies with the forget set}, so \emph{auditing is worthwhile}.
+    \end{description}
+\end{frame}
+
+\begin{frame}{C1 + C2: headline numbers}
+    \vspace{0.2em}
+    \centering
+    \small
+    $r = \dfrac{\text{PPL}_{\text{unlearned}}}{\text{PPL}_{\text{base}}}$ \;(how many times PPL is raised)\quad
+    geo-mean $r = \exp(\overline{\log r})$
+
+    \vspace{0.6em}
+    \begin{tabular}{@{}lccc@{}}
+        \toprule
+        & L1 forget & L2 locality & L3 spillover \\
+        \midrule
+        geo-mean $r$              & \textbf{1.76$\times$} & \textbf{1.29$\times$} & \textbf{1.16$\times$} \\
+        fraction raised ($>1.1\times$) & 95.6\,\%       & 82.8\,\%       & \alert{61.6\,\%} \\
+        \bottomrule
+    \end{tabular}
+
+    \vspace{1.2em}
+    \begin{center}
+        \large
+        \textbf{C1 holds}: 1.76 $>$ 1.29 $>$ 1.16\\[0.4em]
+        \textbf{C2 holds}: L3 still raises \alert{61.6\,\%} of samples
+    \end{center}
+\end{frame}
+
+\begin{frame}{C1 + C2: one plot}
+    \centering
+    \includegraphics[width=0.82\textwidth]{fig_three_layer_decay.pdf}
+
+    \vspace{0.3em}
+    \footnotesize
+    Left axis: L1 $>$ L2 $>$ L3\quad|\quad Right axis: L3 still raises \alert{61.6\,\%}.
+\end{frame}
+
+\begin{frame}{C3: how much does side-effect vary across forget sets?}
+    \centering
+    \small
+    \begin{tabular}{@{}lccc@{}}
+        \toprule
+        & L1 & L2 & L3 \\
+        \midrule
+        mildest (\texttt{star})    & 1.42 & 1.12 & 1.07 \\
+        \alert{worst (\texttt{storm})} & \alert{\textbf{2.44}} & \alert{\textbf{1.78}} & \alert{\textbf{1.25}} \\
+        \midrule
+        spread (max / min)         & \textbf{1.72$\times$} & 1.60$\times$ & 1.17$\times$ \\
+        \bottomrule
+    \end{tabular}
+
+    \vspace{1.2em}
+    \begin{center}
+        \Large
+        Same algorithm, different forget sets $\Rightarrow$ L1 differs by \alert{\textbf{1.7$\times$}}.
+    \end{center}
+
+    \vspace{0.4em}
+    \begin{center}
+        \normalsize
+        $\Rightarrow$ The profile is a function of the forget set --- \emph{worth auditing}.
+    \end{center}
+\end{frame}
+
+\begin{frame}{C3: one plot}
+    \centering
+    \includegraphics[width=0.88\textwidth]{fig_per_forget_profile.pdf}
+
+    \vspace{0.3em}
+    \footnotesize
+    Sorted by L1; \alert{storm} is the worst across all three layers $\Rightarrow$ robust bad forget set.
+\end{frame}
+
+% ────────────────────────────────────────────────────────────────────────────
+\section{Act II $\cdot$ Audit first, then decide}
+
+\begin{frame}{The audit problem: input and output}
+    \vspace{0.4em}
+    \begin{center}
+        \begin{tikzpicture}[font=\small, node distance=10mm]
+            \node[draw, rounded corners, fill=mDarkTeal!12, minimum width=32mm, minimum height=12mm, align=center] (in)
+                {\textbf{Input}\\ 12-dim geometry\\ of the forget set};
+            \node[draw, rounded corners, fill=mLightGreen!25, right=16mm of in, minimum width=28mm, minimum height=12mm, align=center] (box) {\textbf{Auditor}\\ Ridge};
+            \node[draw, rounded corners, fill=mLightBrown!25, right=16mm of box, minimum width=32mm, minimum height=12mm, align=center] (out)
+                {\textbf{Output}\\ L1 / L2 / L3\\ risk scores};
+            \draw[-Latex, thick] (in) -- (box);
+            \draw[-Latex, thick] (box) -- (out);
+        \end{tikzpicture}
+    \end{center}
+
+    \vspace{0.8em}
+    \begin{center}
+        \large
+        \alert{No evaluation text $\cdot$ no unlearn run}
+    \end{center}
+
+    \vspace{0.6em}
+    \footnotesize\centering
+    12 dims = variance / pairwise similarity / centroid / concentration (effective rank, isotropy).\\
+    Leave-One-Out over 10 forget sets.
+\end{frame}
+
+\begin{frame}{What are the 12 geometric features?}
+    \centering
+    \footnotesize
+    \begin{tabular}{@{}lll@{}}
+        \toprule
+        Group & Features (12 total) & Question answered \\
+        \midrule
+        \textbf{Spread}   & \texttt{emb\_variance\_mean / max}
+            & How widely are the 50\\
+                          & \texttt{pairwise\_eucl\_mean} & texts spread in embedding space? \\
+        \midrule
+        \textbf{Similarity} & \texttt{pairwise\_sim\_mean / std / q90}
+            & How similar are the texts\\
+                            & & to each other? \\
+        \midrule
+        \textbf{Location / scale} & \texttt{centroid\_norm}
+            & How far from the origin\\
+                                  & \texttt{emb\_norm\_mean / std} & does the forget set sit? \\
+        \midrule
+        \textbf{Shape / concentration} & \texttt{effective\_rank}
+            & Is the cloud ``a line''\\
+                                       & \texttt{isotropy} & or ``a ball''? \\
+                                       & \texttt{spread\_over\_centroid} & \\
+        \bottomrule
+    \end{tabular}
+
+    \vspace{0.8em}
+    \begin{center}
+        \normalsize
+        \textbf{All computed from the 50 embeddings of the forget set itself ---}\\
+        no evaluation text, no unlearn run.
+    \end{center}
+\end{frame}
+
+\begin{frame}{Audit results}
+    \centering
+    \begin{tabular}{@{}lccc@{}}
+        \toprule
+        & L1 forget & L2 locality & L3 spillover \\
+        \midrule
+        $R^2$                    & \textbf{+0.44} & \textbf{+0.41} & +0.19 \\
+        rank Spearman $\rho$     & +0.62 & +0.62 & +0.61 \\
+        Top-1 hit                & \alert{\checkmark \, storm} & $\times$ & $\times$ \\
+        \bottomrule
+    \end{tabular}
+
+    \vspace{1.2em}
+    \begin{center}
+        \Large
+        Rank correlation $\rho \approx \textbf{0.62}$ on all three layers
+    \end{center}
+    \vspace{0.3em}
+    \begin{center}
+        \normalsize
+        The worst L1 forget set (\texttt{storm}) is correctly predicted.
+    \end{center}
+
+    \vspace{0.4em}
+    \footnotesize\centering\itshape
+    $n=10$, single observation; robustness to larger $n$ and other unlearners yet to be validated.
+\end{frame}
+
+\begin{frame}{Positioning: a warning tool, not a replacement}
+    \centering
+    \small
+    \begin{tabular}{@{}lll@{}}
+        \toprule
+         & \textbf{Can} & \textbf{Cannot} \\
+        \midrule
+        \textbf{Rank}    & tell who is worse ($\rho \approx 0.62$) & absolute value \\
+        \textbf{Screen}  & red / yellow / green warnings           & score an unlearner \\
+        \textbf{Save compute} & 1 s vs. GPU-hours                  & replace the final unlearn \\
+        \bottomrule
+    \end{tabular}
+
+    \vspace{1.0em}
+    \begin{center}
+        \Large
+        \alert{Auditor = cheap coarse-screening warner}
+    \end{center}
+
+    \vspace{0.4em}
+    \begin{center}
+        \normalsize
+        Usage: 100 candidates $\to$ audit rank $\to$ run the top-$k$ for real.\\
+        Final verdict still comes from the actual unlearn run.
+    \end{center}
+\end{frame}
+
+\begin{frame}{Audit scatter: predicted vs. true}
+    \centering
+    \includegraphics[width=0.96\textwidth]{fig_audit_scatter.pdf}
+
+    \vspace{0.2em}
+    \footnotesize
+    Dashed line $y=x$; all three layers $\rho \approx 0.62$; L3 has small magnitude but ranking still usable.
+\end{frame}
+
+\begin{frame}{Geometry vs. surface text}
+    \centering
+    \begin{tabular}{@{}lcc@{}}
+        \toprule
+        Features & dim & $R^2$ \\
+        \midrule
+        surface text statistics    & 261         & +0.14 \\
+        \textbf{pure geometry}     & \textbf{16} & \textbf{+0.36} \\
+        \bottomrule
+    \end{tabular}
+
+    \vspace{1.2em}
+    \begin{center}
+        \Large
+        \alert{16$\times$} fewer features, \alert{2.5$\times$} higher $R^2$
+    \end{center}
+
+    \vspace{0.4em}
+    \begin{center}
+        \normalsize
+        Corruption looks more like a \emph{geometric} phenomenon than a text-difficulty one.
+    \end{center}
+\end{frame}
+
+\begin{frame}{Honest negative result: ball-coverage doesn't work}
+    \vspace{0.5em}
+    \begin{center}
+        \large
+        Tried: circle retain samples by a radius from the forget set.
+    \end{center}
+
+    \vspace{0.8em}
+    \begin{center}
+        \large
+        Got: correlation with true L3 is $\rho = \alert{-0.42}$ (\textbf{wrong sign}).
+    \end{center}
+
+    \vspace{0.8em}
+    \begin{center}
+        \normalsize
+        Why: clusters overlap $\Rightarrow$ the ball covers almost everything.\\[0.3em]
+        Fix: signed projection / mutual-reachability distance.
+    \end{center}
+\end{frame}
+
+% ────────────────────────────────────────────────────────────────────────────
+\section{Discussion}
+
+\begin{frame}{Related Work}
+    \begin{center}
+        \large
+        Neighboring work and how we differ
+    \end{center}
+
+    \vspace{0.6em}
+    \small
+    \begin{tabular}{@{}p{0.34\textwidth}p{0.58\textwidth}@{}}
+        \toprule
+        Direction & Our difference \\
+        \midrule
+        Data-first robustness\newline(Dang+ ACL'24) & Train-set features $\to$ adversarial ASR \newline\; $\Rightarrow$ transferred to \emph{unlearning corruption} \\
+        LLM unlearning algorithms & We \emph{fix} the unlearner, analyze \emph{data-conditioned} side-effects \\
+        Influence / editing\newline locality & Model-centric $\to$ \emph{data-centric} three-layer risk \\
+        \bottomrule
+    \end{tabular}
+\end{frame}
+
+\begin{frame}{Limitations}
+    \vspace{0.3em}
+    \begin{center}
+        \large
+        Four ``singles''
+    \end{center}
+
+    \vspace{0.6em}
+    \begin{itemize}
+        \setlength\itemsep{0.6em}
+        \item single base model (Llama-3.1-8B-Instruct)
+        \item single unlearner (GradAscent)
+        \item single $n = 10$ forget sets (wide CI)
+        \item single metric: PPL ($\neq$ QA accuracy)
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Future Work}
+    \vspace{0.3em}
+    \begin{center}
+        \large
+        Matching fixes for the four ``singles''
+    \end{center}
+
+    \vspace{0.6em}
+    \begin{enumerate}
+        \setlength\itemsep{0.5em}
+        \item $n: 10 \to 100$ (100 triplets already generated)
+        \item add NPO / GradDiff to check auditor robustness
+        \item PPL $\to$ QA accuracy (\texttt{2.extract-qa/} ready)
+        \item \emph{audit-driven} forget-set selection: pick $\mathcal{D}_f$ with lowest predicted L3
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}{Paper positioning}
+    \begin{center}
+        \large
+        \emph{From Three-Layer Corruption to Forget-Set Audit\\ in LLM Unlearning.}
+    \end{center}
+
+    \vspace{0.8em}
+    \textbf{Three selling points}
+    \begin{enumerate}
+        \item three-layer view + L3 at 61.6\,\% $\Rightarrow$ spillover \emph{non-negligible}
+        \item benchmarking $\to$ \textbf{forget-set audit} perspective shift
+        \item geometry alone gives rank-level prediction ($\rho \approx 0.62$)
+    \end{enumerate}
+
+    \vspace{0.6em}
+    \begin{center}
+        \small
+        \textbf{Upgrade}: $n$=10 $\to$ 100 + second unlearner $\Rightarrow$ NeurIPS / ICML
+    \end{center}
+\end{frame}
+
+% ────────────────────────────────────────────────────────────────────────────
+\begin{frame}[standout]
+    Three-layer decay, but never zero.\\[0.5em]
+    \normalsize
+    \textbf{1.76$\times$ $\to$ 1.29$\times$ $\to$ 1.16$\times$}\\[0.3em]
+    Audit $\rho \approx 0.62$, no unlearn needed.
+\end{frame}
+
+\appendix
+
+\begin{frame}[fragile]{Appendix --- reproducing the main results}
+    \footnotesize
+\begin{verbatim}
+# 0. Unlearn + cross-ppl (skippable once done)
+#    => 2.extract-ppl/wikitext_cross_metrics_detail.json
+
+# 1. Act I: three-layer ground truth
+cd 2.extract-ppl
+python analyze_corruption.py          # => corruption_summary.json
+
+# 2. Act II A: per-sample geometry predictor
+cd ../4.regression-predictor
+python 3.corruption_from_geometry.py  # => geometry/geometry_results.json
+
+# 3. Act II B: forget-set audit (LOO, Part 1+2+3+3b)
+python 4.audit_experiments.py         # => audit/audit_summary.json
+\end{verbatim}
+\end{frame}
+
+\begin{frame}{Appendix --- key artefacts}
+    \footnotesize
+    \begin{tabular}{@{}ll@{}}
+        \toprule
+        Artefact & Path \\
+        \midrule
+        three-layer corruption  & \texttt{2.extract-ppl/corruption\_summary.json} \\
+        audit LOO predictions   & \texttt{4.regression-predictor/audit/audit\_summary.json} \\
+        per-forget-set profile  & \texttt{audit/part1\_corruption\_profile.csv} \\
+        audit features          & \texttt{audit/part2\_forget\_features.csv} \\
+        \bottomrule
+    \end{tabular}
+\end{frame}
+
+\end{document}
