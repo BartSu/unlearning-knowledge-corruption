@@ -43,8 +43,8 @@ Ralph agent：每次迭代开始时阅读此文件，结束时更新此文件。
 ### 阶段 3 — 困惑度提取（`2.extract-ppl/`）
 - [x] 对 10 个 unlearn ckpt 跑 10×10 cross-PPL → `wikitext_cross_metrics_detail.json`
 - [x] `analyze_corruption.py` 产出 L1/L2/L3 三层 ground truth → `corruption_summary.json`
-- [ ] 以统一格式（parquet 或 jsonl）保存逐 token PPL 输出
-- [ ] 增加对比基线与 unlearned PPL 分布的 sanity-check 脚本
+- [x] 以统一格式（parquet + jsonl）保存逐样本 PPL 长表（`export_ppl_table.py` → `ppl_long.{parquet,jsonl}`，15000 行，layer ∈ {L1,L2,L3,L3_other}）
+- [x] base vs unlearned PPL 分布 sanity-check 脚本（`sanity_check_ppl.py`，四项 invariant 全 PASS：L1 geo=1.762x，L1>L2>L3 单调，base PPL 跨层一致，L1 100% 样本 ppl 上升）
 - [ ] 补 90 个 triplet 的 cross-PPL（依赖阶段 2）
 
 ### 阶段 4 — 几何分析（`3.feature-engineering/` + `4.regression-predictor/geometry/`）
@@ -55,7 +55,7 @@ Ralph agent：每次迭代开始时阅读此文件，结束时更新此文件。
 
 ### 阶段 5 — Forget-set audit（`4.regression-predictor/audit/`）
 - [x] 运行 `4.audit_experiments.py` 并记录指标（LOO $n=10$：$\rho \approx 0.62$、L1 top-1 = storm）
-- [ ] Bootstrap 95% CI 的 $\rho$（$n=10$ 样本下）加到 audit_summary 与 slides
+- [x] Bootstrap 95% CI 的 $\rho$（$n=10$ 样本下）加到 audit_summary 与 slides（L1 [−0.22,+0.93]、L2 [+0.05,+0.90]、L3 [−0.01,+0.96]，n_boot=10000，seed=0）
 - [ ] 在留出 checkpoint 上报告 R² / MAE
 - [ ] $n=100$ 下重跑审计器，验证 $\rho$ 稳定性（依赖阶段 2+3）
 - [ ] 跨 unlearner 审计器迁移测试（依赖阶段 2）
@@ -71,6 +71,19 @@ Ralph agent：每次迭代开始时阅读此文件，结束时更新此文件。
 - [ ] 新实验 ($n=100$ / 跨 unlearner) 出来后同步刷新三份 doc
 
 ## 迭代日志
+
+### 迭代 9 — 2026-04-19（阶段 3 产物标准化 + sanity-check）
+- 任务：阶段 3 子任务 1+2。新增 `2.extract-ppl/export_ppl_table.py` 将嵌套 `wikitext_cross_metrics_detail.json` 展平为长表（parquet + jsonl），每行一条 (model_triplet, eval_triplet, split, sample_idx) 记录，含 base/unlearn loss+ppl+n_tokens、log_ppl_ratio、corruption layer（L1/L2/L3/L3_other）。新增 `sanity_check_ppl.py` 跑四项 invariant。
+- 结果：pass。15000 行；L1=500, L2=1000, L3=4500, L3_other=9000。sanity check 全 PASS，geo-mean 与 `corruption_summary.json` 完全一致（1.762 / 1.290 / 1.158）。
+- 产物：`2.extract-ppl/{export_ppl_table.py, sanity_check_ppl.py, ppl_long.parquet, ppl_long.jsonl}`
+- 下一步：阶段 3 子任务 3（90 triplet cross-PPL）等 stage2-unlearn 出 ckpt 后启动。
+
+### 迭代 8 — 2026-04-19（阶段 5 bootstrap 95% CI）
+- 任务：阶段 5 子项 "Bootstrap 95% CI 的 ρ（n=10 下）"
+- 结果：pass。新增 `4.regression-predictor/5.bootstrap_rho_ci.py`，对 `part2_audit_predictions.csv` 的 LOO (true, predicted) 对做 percentile bootstrap（n_boot=10000、seed=0），将 `bootstrap_rho_ci` 字段并入 `audit_summary.json`。结果：L1 ρ=+0.624 95% CI [−0.217,+0.926]；L2 ρ=+0.624 CI [+0.052,+0.899]；L3 ρ=+0.612 CI [−0.013,+0.963]。n=10 下 CI 宽、L1/L3 下界触到 0 附近，与 slides "预警器（排序粗筛）而非替代品" 叙事一致，且凸显扩 n=100 的必要性。
+- 产物：`4.regression-predictor/5.bootstrap_rho_ci.py`、`4.regression-predictor/audit/audit_summary.json`
+- 下一步：交棒 reporter 同步 z-doc 三份 slides / README-CN 的审计数字段落；阶段 5 剩余 "留出 ckpt R²/MAE" 与 "coverage 改 signed projection"；n=100 依赖阶段 2。
+
 
 <!-- 在此追加条目，最新在最上方。格式：
 ### 迭代 N — YYYY-MM-DD
