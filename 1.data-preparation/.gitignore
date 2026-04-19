@@ -31,6 +31,8 @@ data/bak/
 unlearn/saves/
 unlearn/logs_wikitext/
 unlearn/logs_wikitext_unlearn/
+unlearn/logs_wikitext_unlearn_batch/
+unlearn/run.pid
 
 unlearn/*bak/
 unlearn/*results/

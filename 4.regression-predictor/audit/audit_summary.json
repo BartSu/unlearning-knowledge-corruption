@@ -48,5 +48,89 @@
   "coverage_vs_spillover": {
     "spearman_rho": -0.4233290200393297,
     "pearson_r": -0.19769833981972149
+  },
+  "bootstrap_rho_ci": {
+    "n": 10,
+    "n_boot": 10000,
+    "seed": 0,
+    "method": "percentile bootstrap over 10 LOO (true, predicted) pairs",
+    "layers": {
+      "L1_forget": {
+        "rho_point": 0.6242424242424242,
+        "rho_mean": 0.5737971669456053,
+        "rho_ci_low_95": -0.2173913043478261,
+        "rho_ci_high_95": 0.9259259259259257,
+        "n_boot_effective": 10000
+      },
+      "L2_locality": {
+        "rho_point": 0.6242424242424242,
+        "rho_mean": 0.5842899610879781,
+        "rho_ci_low_95": 0.051948051948051945,
+        "rho_ci_high_95": 0.89937106918239,
+        "n_boot_effective": 10000
+      },
+      "L3_spillover": {
+        "rho_point": 0.6121212121212121,
+        "rho_mean": 0.5848975501482344,
+        "rho_ci_low_95": -0.012662284972411552,
+        "rho_ci_high_95": 0.9632395382395341,
+        "n_boot_effective": 10000
+      }
+    }
+  },
+  "heldout_r2_mae": {
+    "n": 10,
+    "protocol": "LOO over 10 forget-set clusters; Ridge(alpha=1.0) on 12-d forget-set geometry",
+    "note": "Baseline predicts the mean of the 9 training targets (also LOO).",
+    "layers": {
+      "L1_forget": {
+        "audit": {
+          "r2": 0.4426256127918825,
+          "mae": 0.18985664498755514,
+          "rmse": 0.2252276359813883,
+          "mean_abs_y": 1.7862895073932066,
+          "mae_over_mean_y": 0.10628548407285862
+        },
+        "baseline_loo_mean": {
+          "r2": -0.23456790123456783,
+          "mae": 0.26501902574648273,
+          "rmse": 0.33520127745564027,
+          "mean_abs_y": 1.7862895073932066,
+          "mae_over_mean_y": 0.1483628631582985
+        }
+      },
+      "L2_locality": {
+        "audit": {
+          "r2": 0.409933431591301,
+          "mae": 0.12148168739620964,
+          "rmse": 0.14476188882716357,
+          "mean_abs_y": 1.3025332155550482,
+          "mae_over_mean_y": 0.09326571172654716
+        },
+        "baseline_loo_mean": {
+          "r2": -0.2345679012345676,
+          "mae": 0.1541232460450017,
+          "rmse": 0.20939255054753422,
+          "mean_abs_y": 1.3025332155550482,
+          "mae_over_mean_y": 0.1183257702793592
+        }
+      },
+      "L3_spillover": {
+        "audit": {
+          "r2": 0.18977097880264748,
+          "mae": 0.04776724792712519,
+          "rmse": 0.05590779770209033,
+          "mean_abs_y": 1.160193278359884,
+          "mae_over_mean_y": 0.04117180199031296
+        },
+        "baseline_loo_mean": {
+          "r2": -0.2345679012345685,
+          "mae": 0.06071857148057895,
+          "rmse": 0.06901221682759048,
+          "mean_abs_y": 1.160193278359884,
+          "mae_over_mean_y": 0.05233487610479369
+        }
+      }
+    }
   }
 }
