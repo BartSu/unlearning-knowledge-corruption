@@ -11,3 +11,10 @@
 *.fls
 *.fdb_latexmk
 *.synctex.gz
+
+# Claude Code ephemeral state
+.claude/scheduled_tasks.lock
+.claude/settings.local.json
+
+# per-project memory/plans local files
+.claude/plans/
