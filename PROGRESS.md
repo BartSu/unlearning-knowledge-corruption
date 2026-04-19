@@ -4,29 +4,48 @@ Ralph agent：每次迭代开始时阅读此文件，结束时更新此文件。
 
 ## 任务列表
 
-### 阶段 1 — 数据准备
+流水线：**数据准备 → unlearn 模型 → 困惑度提取 → 几何分析 → forget-set audit**（+ 横向：结果汇报）。
+
+### 阶段 1 — 数据准备（`1.data-preparation/`）
+- [x] WikiText-103 → HDBSCAN 10 簇 → 100 triplets 已生成（`data/wikitext_hdbscan_triplets/triplet_001..100`）
 - [ ] 验证 `1.data-preparation/unlearn/wikitext_unlearn_sample.sh` 能在小样本上端到端运行
 - [ ] 恢复或替换已删除的 `1.data-preparation/unlearn/eval_wikitext_perplexity.py`
 - [ ] 在 `1.data-preparation/README.md` 中记录数据集 schema
 
-### 阶段 2 — 困惑度提取
-- [ ] 在样例 unlearned 模型上运行 `2.extract-ppl/analyze_corruption.py`
+### 阶段 2 — Unlearn 模型（`1.data-preparation/unlearn/`）⚠️ **当前瓶颈**
+- [x] 跑 10 个代表 triplet（`triplet_0{01,11,21,…,91}`）的 GradAscent checkpoint（batch 脚本已就绪）
+- [ ] 补跑剩余 90 个 triplet 的 unlearn → 支撑 $n=10 \to 100$ 审计升级
+- [ ] 加第二个 unlearner（NPO / GradDiff）验证审计器跨算法稳健性
+
+### 阶段 3 — 困惑度提取（`2.extract-ppl/`）
+- [x] 对 10 个 unlearn ckpt 跑 10×10 cross-PPL → `wikitext_cross_metrics_detail.json`
+- [x] `analyze_corruption.py` 产出 L1/L2/L3 三层 ground truth → `corruption_summary.json`
 - [ ] 以统一格式（parquet 或 jsonl）保存逐 token PPL 输出
 - [ ] 增加对比基线与 unlearned PPL 分布的 sanity-check 脚本
+- [ ] 补 90 个 triplet 的 cross-PPL（依赖阶段 2）
 
-### 阶段 3 — 几何特征
-- [ ] 为每个模型检查点提取隐状态几何特征
+### 阶段 4 — 几何分析（`3.feature-engineering/` + `4.regression-predictor/geometry/`）
+- [x] 12 维 forget-set 内禀几何特征（variance / similarity / centroid / effective rank / isotropy）
+- [ ] 为每个模型检查点提取隐状态几何特征（hidden-state geometry，目前只有 forget-set 嵌入几何）
 - [ ] 确认特征维度与回归输入匹配
-
-### 阶段 4 — 回归预测器
 - [ ] 验证 `4.regression-predictor/3.corruption_from_geometry.py` 能无错训练
-- [x] 运行 `4.regression-predictor/4.audit_experiments.py` 并记录指标
-- [ ] 在留出检查点上报告 R² / MAE
 
-### 阶段 5 — 结果汇报
+### 阶段 5 — Forget-set audit（`4.regression-predictor/audit/`）
+- [x] 运行 `4.audit_experiments.py` 并记录指标（LOO $n=10$：$\rho \approx 0.62$、L1 top-1 = storm）
+- [ ] Bootstrap 95% CI 的 $\rho$（$n=10$ 样本下）加到 audit_summary 与 slides
+- [ ] 在留出 checkpoint 上报告 R² / MAE
+- [ ] $n=100$ 下重跑审计器，验证 $\rho$ 稳定性（依赖阶段 2+3）
+- [ ] 跨 unlearner 审计器迁移测试（依赖阶段 2）
+- [ ] 改进 coverage：带符号投影 / mutual-reachability 取代球覆盖
+
+### 横向 — 结果汇报（`z-doc/`）
 - [x] 重新生成 `z-doc/slides.tex` 中引用的所有图表
 - [x] 使用最新结果更新 `z-doc/README-CN.md`（已核对，数字与 audit_summary.json 一致）
 - [x] 在全新克隆上完成最终端到端演练
+- [x] 封面标题升级为 "From Three-Layer Corruption to Forget-Set Audit"
+- [x] 新增英文 slides (`slides-en.tex` / `slides-en.pdf`)
+- [x] 新增「审计器 = 预警器，不是替代品」定位帧 + README §5.4.1
+- [ ] 新实验 ($n=100$ / 跨 unlearner) 出来后同步刷新三份 doc
 
 ## 迭代日志
 
@@ -37,6 +56,19 @@ Ralph agent：每次迭代开始时阅读此文件，结束时更新此文件。
 - 产物：<路径、commit 哈希>
 - 下一步：<下一个任务 id>
 -->
+
+### 迭代 7 — 2026-04-19（论文定位升级 + slides-en + 流水线重定义）
+- 任务：封面标题与叙事定位调整；新增英文版 slides；把 AGENT.md 流水线从四阶段扩展为五阶段（加入独立的 "unlearn 模型" 阶段）。非 PROGRESS 原列表项，作为方法论升级记录。
+- 结果：pass。主要改动：
+  - **slides**：封面 `\title` 改为 "From Three-Layer Corruption to Forget-Set Audit in LLM Unlearning"，subtitle 改为 "不跑 unlearn，只看 forget set 几何 ⇒ 排序级副作用预警"；论文定位帧同步。
+  - **新增预警器帧**：`审计器 = 便宜的粗筛预警器`，明确"排序 / 粗筛 / 省算力"可做，"绝对数值 / 给 unlearn 打分 / 省掉最终 unlearn"不可做。
+  - **新增 12 维特征解释帧**：分散度 / 相似度 / 位置规模 / 形状集中度四类。
+  - **定义帧合并**：同心圆图 + L1/L2/L3 大白话短语 + `r = PPL_unlearned/PPL_base` 公式合并到一帧，放在 "一句话贡献" 之前。
+  - **slides-en.tex**：完整英文版 29 页。
+  - **README-CN.md**：标题与 slides 对齐；§5 改名 "先审计，再决定"；新增 §5.4.1 "预警器，不是替代品" 表；§11 论文定位 Title 同步。
+  - **AGENT.md**：任务目标补 "unlearn 模型" 独立阶段；背景信息列出五阶段与目录映射；规则 6 扩展到三份 doc（加 slides-en）；任务选择规则加当前瓶颈 = 阶段 2。
+- 产物：commit `25f37d0` (z-doc 三份同步)、`a9b7eba` (AGENT.md)；`z-doc/slides.tex`、`z-doc/slides-en.tex`、`z-doc/README-CN.md` 及两份 PDF。
+- 下一步：阶段 2 扩 n（补 90 个 triplet 的 unlearn）；阶段 5 先把 bootstrap 95% CI 打出来（免 GPU，几分钟可做）；留出 checkpoint R²/MAE 报告。
 
 ### 迭代 6 — 2026-04-18（slides 可读性迭代，Ralph 10 轮）
 - 任务：用户要求「slides 每页想表达的内容越简单越好，尤其三层定义」。非 PROGRESS 列表项，作为 Stage 5 叙述打磨记录。
