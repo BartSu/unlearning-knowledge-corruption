@@ -31,9 +31,9 @@ Ralph agent：每次迭代开始时阅读此文件，结束时更新此文件。
 
 ### 阶段 1 — 数据准备（`1.data-preparation/`）
 - [x] WikiText-103 → HDBSCAN 10 簇 → 100 triplets 已生成（`data/wikitext_hdbscan_triplets/triplet_001..100`）
-- [ ] 验证 `1.data-preparation/unlearn/wikitext_unlearn_sample.sh` 能在小样本上端到端运行
-- [ ] 恢复或替换已删除的 `1.data-preparation/unlearn/eval_wikitext_perplexity.py`
-- [ ] 在 `1.data-preparation/README.md` 中记录数据集 schema
+- [x] 验证 `1.data-preparation/unlearn/wikitext_unlearn_sample.sh` 能在小样本上端到端运行（`saves/wikitext_unlearn_sample/.../triplet_001_GradAscent/` 150/150 step、epoch 10/10、4 分片 safetensors + `trainer_state.json` 齐全）
+- [x] 恢复或替换已删除的 `1.data-preparation/unlearn/eval_wikitext_perplexity.py`（从 `c799c51~1` 恢复 698 行；路径更新为 `1.data-preparation/`；`py_compile` + `--help` 通过）
+- [x] 在 `1.data-preparation/README.md` 中记录数据集 schema（triplet {train=forget, validation=retain, test=probe} × 50 条 `{"text": ...}`；100 triplet × 10 cluster 布局）
 
 ### 阶段 2 — Unlearn 模型（`1.data-preparation/unlearn/`）⚠️ **当前瓶颈**
 - [x] 跑 10 个代表 triplet（`triplet_0{01,11,21,…,91}`）的 GradAscent checkpoint（batch 脚本已就绪）
@@ -71,6 +71,15 @@ Ralph agent：每次迭代开始时阅读此文件，结束时更新此文件。
 - [ ] 新实验 ($n=100$ / 跨 unlearner) 出来后同步刷新三份 doc
 
 ## 迭代日志
+
+### 迭代 10 — 2026-04-19（阶段 1 全部勾完）
+- 任务：阶段 1 三个未勾选子项（sample 脚本端到端验证、恢复 `eval_wikitext_perplexity.py`、补 README schema）。
+- 结果：pass。
+  - **sample 脚本**：既有 `1.data-preparation/unlearn/saves/wikitext_unlearn_sample/wikitext_Llama-3.1-8B-Instruct_triplet_001_GradAscent/` 已是完整产物——`trainer_state.json` 显示 epoch=10/10、global_step=150/150、max_steps=150；4 分片 safetensors + tokenizer 齐全；train_loss −735.46（GradAscent，loss 越负越好），log 从 step 1 的 −2.25 单调下滑到 step 150 的 −1344.85，端到端跑通。
+  - **eval 脚本**：从 commit `c799c51~1` 恢复 698 行原文件；repo 重命名后 `data-preparation → 1.data-preparation`，同步修正 3 处 `WIKITEXT_DIR_CANDIDATES` + 两处 docstring 示例；`py_compile` + `python eval_wikitext_perplexity.py --help` 均通过。
+  - **README**：新增 `1.data-preparation/README.md`，记录 pipeline 摘要、文件布局、triplet schema（`{"text": ...}` 字段，train=forget/validation=retain/test=probe 三 split × 50 条）、`run_manifest.json` 关键参数（forget_size=50、triplets_per_domain=10、seed=42）、100 triplet × 10 cluster 的索引方式、与 stage 2/3 的下游契约。
+- 产物：`1.data-preparation/unlearn/eval_wikitext_perplexity.py`（restored + path-patched）、`1.data-preparation/README.md`
+- 下一步：阶段 1 全部完成；当前瓶颈仍在阶段 2（补 90 triplet unlearn）。
 
 ### 迭代 9 — 2026-04-19（阶段 3 产物标准化 + sanity-check）
 - 任务：阶段 3 子任务 1+2。新增 `2.extract-ppl/export_ppl_table.py` 将嵌套 `wikitext_cross_metrics_detail.json` 展平为长表（parquet + jsonl），每行一条 (model_triplet, eval_triplet, split, sample_idx) 记录，含 base/unlearn loss+ppl+n_tokens、log_ppl_ratio、corruption layer（L1/L2/L3/L3_other）。新增 `sanity_check_ppl.py` 跑四项 invariant。
