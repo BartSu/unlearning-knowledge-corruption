@@ -330,24 +330,25 @@
         \midrule
         $R^2$                    & \textbf{+0.44} & \textbf{+0.41} & +0.19 \\
         rank Spearman $\rho$     & +0.62 & +0.62 & +0.61 \\
+        95\% CI ($n_\text{boot}=10$k) & [$-0.22$, $+0.93$] & [$+0.05$, $+0.90$] & [$-0.01$, $+0.96$] \\
         Top-1 hit                & \alert{\checkmark \, storm} & $\times$ & $\times$ \\
         \bottomrule
     \end{tabular}
 
-    \vspace{1.2em}
+    \vspace{0.9em}
     \begin{center}
         \Large
-        Rank correlation $\rho \approx \textbf{0.62}$ on all three layers
+        $\rho \approx \textbf{0.62}$, but at $n=10$ the \alert{CI is wide}
     \end{center}
-    \vspace{0.3em}
+    \vspace{0.2em}
     \begin{center}
         \normalsize
-        The worst L1 forget set (\texttt{storm}) is correctly predicted.
+        L1 / L3 lower bounds cross 0 $\Rightarrow$ \textbf{rank-level screening signal only}; $n=100$ needed to tighten.
     \end{center}
 
-    \vspace{0.4em}
+    \vspace{0.3em}
     \footnotesize\centering\itshape
-    $n=10$, single observation; robustness to larger $n$ and other unlearners yet to be validated.
+    Percentile bootstrap over 10 LOO pairs; motivates the Stage-2 unlearn scale-up.
 \end{frame}
 
 \begin{frame}{Positioning: a warning tool, not a replacement}

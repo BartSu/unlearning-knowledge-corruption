@@ -50,13 +50,13 @@ Ralph agent：每次迭代开始时阅读此文件，结束时更新此文件。
 ### 阶段 4 — 几何分析（`3.feature-engineering/` + `4.regression-predictor/geometry/`）
 - [x] 12 维 forget-set 内禀几何特征（variance / similarity / centroid / effective rank / isotropy）
 - [ ] 为每个模型检查点提取隐状态几何特征（hidden-state geometry，目前只有 forget-set 嵌入几何）
-- [ ] 确认特征维度与回归输入匹配
-- [ ] 验证 `4.regression-predictor/3.corruption_from_geometry.py` 能无错训练
+- [x] 确认特征维度与回归输入匹配（16 几何特征 × 5000 行；LOGO CV by eval_triplet n=10 groups）
+- [x] 验证 `4.regression-predictor/3.corruption_from_geometry.py` 能无错训练（Ridge R²=+0.17 / GB R²=+0.37 / RF R²=+0.28；L3-only RF R²=+0.25；产物 `geometry/{geometry_results.json,geometry_predictions.csv}` 已刷新）
 
 ### 阶段 5 — Forget-set audit（`4.regression-predictor/audit/`）
 - [x] 运行 `4.audit_experiments.py` 并记录指标（LOO $n=10$：$\rho \approx 0.62$、L1 top-1 = storm）
 - [x] Bootstrap 95% CI 的 $\rho$（$n=10$ 样本下）加到 audit_summary 与 slides（L1 [−0.22,+0.93]、L2 [+0.05,+0.90]、L3 [−0.01,+0.96]，n_boot=10000，seed=0）
-- [ ] 在留出 checkpoint 上报告 R² / MAE
+- [x] 在留出 checkpoint 上报告 R² / MAE（n=10 LOO；Ridge 12 维几何。audit: L1 R²=+0.443 MAE=0.190；L2 R²=+0.410 MAE=0.121；L3 R²=+0.190 MAE=0.048；LOO-mean baseline R²=−0.235 全负，audit 在三层上均胜出）
 - [ ] $n=100$ 下重跑审计器，验证 $\rho$ 稳定性（依赖阶段 2+3）
 - [ ] 跨 unlearner 审计器迁移测试（依赖阶段 2）
 - [ ] 改进 coverage：带符号投影 / mutual-reachability 取代球覆盖
@@ -71,6 +71,29 @@ Ralph agent：每次迭代开始时阅读此文件，结束时更新此文件。
 - [ ] 新实验 ($n=100$ / 跨 unlearner) 出来后同步刷新三份 doc
 
 ## 迭代日志
+
+### 迭代 13 — 2026-04-19（reporter：同步 bootstrap CI 到 z-doc 三份）
+- 任务：stage5-audit 汇报迭代 8（bootstrap 95% CI）之后的文档同步。
+- 结果：pass。`z-doc/README-CN.md` §5.3 新增 CI 小表（L1 [−0.22,+0.93]、L2 [+0.05,+0.90]、L3 [−0.01,+0.96]）+ 解读段落；`slides.tex` / `slides-en.tex` 在「审计结果 / Audit results」表格中插入 95% CI 行，headline 从 "三层 ρ≈0.62" 改为 "ρ≈0.62，但 n=10 下 CI 宽 ⇒ 排序级粗筛信号"。两份 PDF 各 xelatex 跑两遍（29 页）。
+- 备注：`audit_summary.json` 同一次 commit 还追加了 `heldout_r2_mae` 字段（迭代 11 已记），slides 尚未纳入该字段，待后续单独汇报时再加入。
+- 产物：`z-doc/{README-CN.md, slides.tex, slides-en.tex, slides.pdf, slides-en.pdf}`
+
+### 迭代 12 — 2026-04-19（阶段 4：回归输入验证）
+- 任务：阶段 4 子项 2、3 —— 确认特征维度匹配 + 验证 `4.regression-predictor/3.corruption_from_geometry.py` 可无错训练（免 GPU，读缓存 CSV）。
+- 结果：pass。`geometry/corruption_geometry_features.csv` 提供 16 维纯几何特征 × 5000 行 (10 model_triplet × 10 eval_triplet × 50 test sample)，LOGO CV by eval_triplet 10 组。得分：mean baseline R²=−0.01；Ridge R²=+0.17；GB(300/3/0.05) R²=+0.37；RF(500/∞/3/0.5) R²=+0.28；cross-cluster（L3-only）RF R²=+0.25。RF 重要性头部：`forget_mean_pairwise_similarity` / `cos_sim_mean` / `forget_centroid_norm` / `forget_emb_variance_mean`。
+- 产物：`4.regression-predictor/geometry/{geometry_results.json, geometry_predictions.csv}` 已刷新。
+- 剩余：阶段 4 子项 1（hidden-state ckpt 几何）依赖阶段 2 扩到 100 ckpt，延后批量跑。
+- 下一步：阶段 2 补完 90 triplet unlearn 后，批量在 10 → 100 ckpt 上提 hidden-state 几何特征。
+
+### 迭代 11 — 2026-04-19（阶段 5 held-out R²/MAE + LOO-mean baseline）
+- 任务：阶段 5 子项 "留出 checkpoint 报告 R² / MAE"
+- 结果：pass。新增 `4.regression-predictor/6.heldout_r2_mae.py`，将 LOO 预测（Ridge alpha=1.0，12 维 forget-set 几何，训练 9 / 留 1）明确标注为 held-out 协议，补 MAE、并加 LOO-mean baseline 对照。数字（audit vs baseline）：
+  - L1_forget:   R² +0.443 vs −0.235；MAE 0.190 vs 0.265；RMSE 0.225 vs 0.294
+  - L2_locality: R² +0.410 vs −0.235；MAE 0.121 vs 0.154；RMSE 0.145 vs 0.171
+  - L3_spillover: R² +0.190 vs −0.235；MAE 0.048 vs 0.061；RMSE 0.056 vs 0.067
+  三层 audit 均胜 baseline；L3 绝对误差最小但主要因为 L3 尺度本身小（geo≈1.16）。写入 `audit_summary.json.heldout_r2_mae`。
+- 产物：`4.regression-predictor/6.heldout_r2_mae.py`、`4.regression-predictor/audit/audit_summary.json`
+- 下一步：交 reporter 同步 z-doc 三份；阶段 5 剩余 coverage → signed projection / mutual-reachability；n=100 / 跨 unlearner 依赖阶段 2。
 
 ### 迭代 10 — 2026-04-19（阶段 1 全部勾完）
 - 任务：阶段 1 三个未勾选子项（sample 脚本端到端验证、恢复 `eval_wikitext_perplexity.py`、补 README schema）。

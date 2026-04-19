@@ -336,24 +336,25 @@
         \midrule
         $R^2$           & \textbf{+0.44} & \textbf{+0.41} & +0.19 \\
         排序 Spearman $\rho$ & +0.62 & +0.62 & +0.61 \\
+        95\% CI ($n_\text{boot}=10$k) & [$-0.22$, $+0.93$] & [$+0.05$, $+0.90$] & [$-0.01$, $+0.96$] \\
         Top-1 命中       & \alert{\checkmark \, storm} & $\times$ & $\times$ \\
         \bottomrule
     \end{tabular}
 
-    \vspace{1.2em}
+    \vspace{0.9em}
     \begin{center}
         \Large
-        三层排序相关 $\rho \approx \textbf{0.62}$
+        三层排序相关 $\rho \approx \textbf{0.62}$，但 $n=10$ \alert{CI 宽}
     \end{center}
-    \vspace{0.3em}
+    \vspace{0.2em}
     \begin{center}
         \normalsize
-        L1 最严重的 forget set (\texttt{storm}) 被正确预测到。
+        L1 / L3 下界跨 0 $\Rightarrow$ \textbf{排序级粗筛信号}，需 $n=100$ 收紧。
     \end{center}
 
-    \vspace{0.4em}
+    \vspace{0.3em}
     \footnotesize\centering\itshape
-    $n=10$，单观察点；$n\uparrow$、换 unlearner 的稳健性待验证。
+    Bootstrap percentile over 10 LOO pairs；正是阶段 2 扩 unlearn 的动机。
 \end{frame}
 
 \begin{frame}{审计器的定位：预警器，不是替代品}
