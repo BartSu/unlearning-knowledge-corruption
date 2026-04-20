@@ -99,6 +99,16 @@
     Llama-3.1-8B-Instruct $\cdot$ GradAscent $\cdot$ $n=50$ forget sets (10 HDBSCAN clusters $\times$ 5).
 \end{frame}
 
+\begin{frame}{Figure 1 --- three-layer corruption + geometry ranking}
+    \centering
+    \includegraphics[width=0.98\textwidth]{figures/fig1_hero.pdf}
+
+    \vspace{-0.2em}
+    \footnotesize
+    Main: 50$\times$50 test-split $\log r$ matrix; diagonal blocks = same cluster (L1+L2); off-diagonal = L3.\quad
+    Left bar: audit predicts $\widehat{L_1}$ from forget-set 12-d geometry, $\rho=+0.49$.
+\end{frame}
+
 \begin{frame}{Motivation in one line}
     \vfill
     \begin{center}
@@ -129,9 +139,9 @@
         arr/.style={-Latex, thick, mDarkTeal},
     ]
         \node[box, fill=mDarkTeal!12] (c) {WikiText-103\\cluster into \textbf{10}};
-        \node[box, fill=mDarkTeal!12, right=6mm of c] (t) {1 forget set\\ per cluster};
-        \node[box, fill=mLightGreen!20, right=6mm of t] (u) {\textbf{10} unlearn\\ runs};
-        \node[box, fill=mLightBrown!25, right=6mm of u] (m) {\textbf{10$\times$10}\\ cross-ppl};
+        \node[box, fill=mDarkTeal!12, right=6mm of c] (t) {5 forget sets\\ per cluster};
+        \node[box, fill=mLightGreen!20, right=6mm of t] (u) {\textbf{50} unlearn\\ runs};
+        \node[box, fill=mLightBrown!25, right=6mm of u] (m) {\textbf{50$\times$50}\\ cross-ppl};
 
         \draw[arr] (c) -- (t);
         \draw[arr] (t) -- (u);
@@ -141,10 +151,10 @@
     \vspace{1.4em}
     \centering
     \large
-    Every ckpt eval'd on every cluster $\Rightarrow$ 10$\times$10 matrix
+    Every ckpt eval'd on every triplet $\Rightarrow$ 50$\times$50 matrix
 \end{frame}
 
-\begin{frame}{Where L1 / L2 / L3 sit in the 10$\times$10 matrix}
+\begin{frame}{Where L1 / L2 / L3 sit in the cross-matrix}
     \centering
     \begin{tikzpicture}[font=\footnotesize]
         \def\s{0.38}
@@ -285,7 +295,7 @@
     \vspace{0.6em}
     \footnotesize\centering
     12 dims = variance / pairwise similarity / centroid / concentration (effective rank, isotropy).\\
-    Leave-One-Out over 10 forget sets.
+    Leave-One-Out over 50 forget sets.
 \end{frame}
 
 \begin{frame}{What are the 12 geometric features?}

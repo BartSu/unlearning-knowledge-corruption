@@ -105,6 +105,16 @@
     Llama-3.1-8B-Instruct · GradAscent · $n=50$ forget sets (10 HDBSCAN clusters × 5).
 \end{frame}
 
+\begin{frame}{一图看懂：三层 corruption + 几何排序}
+    \centering
+    \includegraphics[width=0.98\textwidth]{figures/fig1_hero.pdf}
+
+    \vspace{-0.2em}
+    \footnotesize
+    主图：50×50 test-split $\log r$ 矩阵；对角块 = 同簇 (L1+L2)，非对角 = L3。\quad
+    左条：audit 仅用 forget-set 12 维几何预测 $\widehat{L_1}$，$\rho=+0.49$。
+\end{frame}
+
 \begin{frame}{动机：一句话}
     \vfill
     \begin{center}
@@ -135,9 +145,9 @@
         arr/.style={-Latex, thick, mDarkTeal},
     ]
         \node[box, fill=mDarkTeal!12] (c) {WikiText-103\\聚成 \textbf{10 簇}};
-        \node[box, fill=mDarkTeal!12, right=6mm of c] (t) {每簇 1 个\\ forget set};
-        \node[box, fill=mLightGreen!20, right=6mm of t] (u) {\textbf{10 次}\\ unlearn};
-        \node[box, fill=mLightBrown!25, right=6mm of u] (m) {\textbf{10×10}\\ cross-ppl};
+        \node[box, fill=mDarkTeal!12, right=6mm of c] (t) {每簇 5 个\\ forget set};
+        \node[box, fill=mLightGreen!20, right=6mm of t] (u) {\textbf{50 次}\\ unlearn};
+        \node[box, fill=mLightBrown!25, right=6mm of u] (m) {\textbf{50×50}\\ cross-ppl};
 
         \draw[arr] (c) -- (t);
         \draw[arr] (t) -- (u);
@@ -147,10 +157,10 @@
     \vspace{1.4em}
     \centering
     \large
-    每个 ckpt 在每个簇上都评 PPL $\Rightarrow$ 10×10 矩阵
+    每个 ckpt 在每个 triplet 上都评 PPL $\Rightarrow$ 50×50 矩阵
 \end{frame}
 
-\begin{frame}{L1 / L2 / L3 在 10×10 矩阵里的位置}
+\begin{frame}{L1 / L2 / L3 在 cross-matrix 里的位置}
     \centering
     \begin{tikzpicture}[font=\footnotesize]
         \def\s{0.38}

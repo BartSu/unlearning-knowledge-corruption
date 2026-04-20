@@ -1,5 +1,9 @@
 # From Three-Layer Corruption to Forget-Set Audit in LLM Unlearning —— 不跑 unlearn，只看 forget set 几何 ⇒ 排序级副作用预警
 
+![Figure 1 hero](figures/fig1_hero.pdf)
+
+*Figure 1 — 50×50 test-split $\log r$ 矩阵（主图）：对角块 = 同簇 L1+L2，非对角 = L3；右上内嵌 violin 给三层分布；左条 = audit 仅用 forget set 12 维几何预测 $\widehat{L_1}$，$\rho = +0.49$，CI$_{95}$ = [+0.22, +0.68]。*
+
 > 在 Llama-3.1-8B-Instruct 上对 GradAscent unlearning 做 data-first 的初步
 > 分析。我们用 `ppl_ratio` 把 unlearning 的副作用划分为三层（L1 forget /
 > L2 同簇 locality / L3 跨簇 spillover），在当前设置下（单 base model、
