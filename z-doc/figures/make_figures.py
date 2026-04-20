@@ -141,6 +141,11 @@ def main() -> None:
         paths.extend([fig_hero(), fig_forget_spread()])
     except Exception as exc:
         print(f"[warn] hero/spread figures skipped: {exc}")
+    try:
+        from make_fig2_intro_storyboard import fig_intro_storyboard
+        paths.append(fig_intro_storyboard())
+    except Exception as exc:
+        print(f"[warn] intro-storyboard figure skipped: {exc}")
     for p in paths:
         print(f"wrote {p.relative_to(ROOT)}")
 
