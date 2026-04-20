@@ -136,6 +136,11 @@ def fig_audit_scatter() -> Path:
 
 def main() -> None:
     paths = [fig_three_layer_decay(), fig_per_forget_profile(), fig_audit_scatter()]
+    try:
+        from make_fig1_hero import fig_hero, fig_forget_spread
+        paths.extend([fig_hero(), fig_forget_spread()])
+    except Exception as exc:
+        print(f"[warn] hero/spread figures skipped: {exc}")
     for p in paths:
         print(f"wrote {p.relative_to(ROOT)}")
 
