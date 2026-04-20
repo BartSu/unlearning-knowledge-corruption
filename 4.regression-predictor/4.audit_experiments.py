@@ -332,9 +332,20 @@ def main():
             "pearson_r":    float(cov_pear),
         },
     }
-    with open(OUT / "audit_summary.json", "w") as f:
+    summary_path = OUT / "audit_summary.json"
+    # Preserve downstream-script sections (bootstrap_rho_ci, heldout_r2_mae)
+    # so re-running this script doesn't silently drop them.
+    if summary_path.exists():
+        try:
+            prev = json.loads(summary_path.read_text())
+        except Exception:
+            prev = {}
+        for k in ("bootstrap_rho_ci", "heldout_r2_mae"):
+            if k in prev and k not in summary:
+                summary[k] = prev[k]
+    with open(summary_path, "w") as f:
         json.dump(summary, f, indent=2)
-    print(f"\nWrote {OUT}/audit_summary.json")
+    print(f"\nWrote {summary_path}")
 
 
 if __name__ == "__main__":

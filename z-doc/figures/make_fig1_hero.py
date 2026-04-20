@@ -182,11 +182,6 @@ def fig_hero() -> Path:
     # violin inset on heatmap (upper-right)
     violin_inset(ax_hm)
 
-    fig.suptitle(
-        r"\textbf{Three-layer corruption — rankable from forget-set geometry alone}",
-        fontsize=12, y=0.98,
-    )
-    # disable LaTeX if unavailable
     fig.suptitle("Three-layer corruption — rankable from forget-set geometry alone",
                  fontsize=12, y=0.98, fontweight="bold")
 
