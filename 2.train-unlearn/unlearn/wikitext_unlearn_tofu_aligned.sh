@@ -4,7 +4,7 @@
 #
 # Training config:
 #   per_device_batch=16, grad_accum=4   -> effective_batch = 64
-#   num_epochs=5, max_steps=3 (hard-pinned)
+#   num_epochs=5, max_steps=5 (hard-pinned; 1 weight-update per epoch because forget=50 < effective_bs=64)
 #   lr=1e-5, scheduler=linear, warmup_steps=1
 #   optim=paged_adamw_32bit, weight_decay=0.01, bf16=True
 #   samples_seen = 50 * 5 = 250 per triplet
@@ -41,7 +41,7 @@ GAS=4             # gradient_accumulation_steps  (TOFU forget01 value)
                   # effective_batch = BS * GAS * num_devices = 16 * 4 * 1 = 64
 EPOCHS=5          # TOFU forget01 num_epochs
 LR="1e-5"         # TOFU forget01 default
-MAX_STEPS=3       # = epochs * forget_size / effective_batch = 5 * 50 / 64 ≈ 3
+MAX_STEPS=5       # = num_epochs (1 update per epoch since forget=50 < effective_bs=64 means dataloader emits 1 macro-batch/epoch)
 LR_SCHEDULER="linear"
 WARMUP_STEPS=1    # TOFU: max(1, steps_per_epoch)
 OPTIM="paged_adamw_32bit"   # TOFU optimizer
