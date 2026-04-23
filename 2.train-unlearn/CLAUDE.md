@@ -56,7 +56,7 @@ OpenUnlearning 的启动命令偏长（Hydra override 一堆），`unlearn/*.sh`
 | `wikitext_unlearn_batch.sh` | 循环 100 个 triplet 的批量浅 unlearn | 同上浅配置 |
 | `wikitext_unlearn_tofu_aligned.sh` | **当前主配置**，对齐 TOFU 默认超参 | `max_steps=3, epoch=5, bs=16, gas=4, lr=1e-5, optim=paged_adamw_32bit`（见 STATE.md 阶段 ② 训练配置表） |
 
-`eval_wikitext_perplexity.py` 是**历史遗留**的 cross-PPL 脚本，真正的 PPL 评测属阶段 ③（`../2.extract-ppl/` 或等价目录）。本目录保留它只是为了方便单 ckpt 快速 sanity check。
+PPL 评测不在本目录 —— 由阶段 ③（`../3.inference/extract-ppl/`）负责；本阶段只产 checkpoint。
 
 ### 重要的日志约定
 
