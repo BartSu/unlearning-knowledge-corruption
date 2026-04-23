@@ -1,9 +1,0 @@
-WIKITEXT:
-  handler: PretrainingDataset
-  args:
-    hf_args:
-      path: "json"
-      data_files: ""
-      split: "train"
-    text_key: "text"
-    max_length: 512
