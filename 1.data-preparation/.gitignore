@@ -27,13 +27,4 @@ data/wikitext_hdbscan_triplets/triplet_*
 data/__pycache__/
 data/bak/
 
-# Unlearning saves and logs (large model checkpoints)
-unlearn/saves/
-unlearn/logs_wikitext/
-unlearn/logs_wikitext_unlearn/
-unlearn/logs_wikitext_unlearn_batch/
-unlearn/run.pid
-
-unlearn/*bak/
-unlearn/*results/
 *.log

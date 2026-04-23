@@ -10,24 +10,31 @@ clustering (10 non-noise clusters) → per-cluster keyword labeling → triplet
 sampling → 100 triplets (10 clusters × 10 triplets/cluster).
 
 The upstream filtering / embedding / clustering code lives under
-`open-unlearning/` and `scripts/` (see `data/wikitext_hdbscan_triplets/run_manifest.json`
-for exact input paths and parameters). This README covers the final **triplet
-dataset schema** consumed by stage 2 onward.
+`../2.train-unlearn/open-unlearning/` and `scripts/` (see
+`data/wikitext_hdbscan_triplets/run_manifest.json` for exact input paths and
+parameters). This README covers the final **triplet dataset schema** consumed
+by stage 2 onward.
+
+> **NOTE**: the `unlearn/` and `open-unlearning/` subdirs were moved to
+> `../2.train-unlearn/` on 2026-04-23 to match pipeline-stage numbering.
+> Only the triplet datasets under `data/` remain here.
 
 ## File layout
 
 ```
 1.data-preparation/
-├── data/
-│   └── wikitext_hdbscan_triplets/
-│       ├── run_manifest.json        # provenance + per-triplet metadata
-│       ├── triplet_001/
-│       │   ├── train.json           # forget set        (50 texts)
-│       │   ├── validation.json      # retain set        (50 texts)
-│       │   └── test.json            # held-out probe    (50 texts)
-│       ├── triplet_002/
-│       │   └── …
-│       └── triplet_100/
+└── data/
+    └── wikitext_hdbscan_triplets/
+        ├── run_manifest.json        # provenance + per-triplet metadata
+        ├── triplet_001/
+        │   ├── train.json           # forget set        (50 texts)
+        │   ├── validation.json      # retain set        (50 texts)
+        │   └── test.json            # held-out probe    (50 texts)
+        ├── triplet_002/
+        │   └── …
+        └── triplet_100/
+
+../2.train-unlearn/                  # stage 2: unlearn training (moved here 2026-04-23)
 ├── unlearn/
 │   ├── wikitext_unlearn_sample.sh   # single-triplet smoke-test
 │   ├── wikitext_unlearn_batch.sh    # batch unlearn (10 reps / 100 triplets)
@@ -89,10 +96,11 @@ Per-triplet metadata lives in `run_manifest.json → triplets[i]`:
 
 ## Downstream contract
 
-Stage 2 (`unlearn/wikitext_unlearn_{sample,batch}.sh`) consumes
-`train.json` (forget) and `validation.json` (retain) per triplet and writes
-checkpoints to `unlearn/saves/wikitext_unlearn{_sample,_batch}/`.
+Stage 2 (`../2.train-unlearn/unlearn/wikitext_unlearn_{sample,batch}.sh`)
+consumes `train.json` (forget) and `validation.json` (retain) per triplet and
+writes checkpoints to
+`../2.train-unlearn/unlearn/saves/wikitext_unlearn{_sample,_batch}/`.
 
-Stage 3 (`2.extract-ppl/`) runs `eval_wikitext_perplexity.py` to compute
+Stage 3 (`../2.extract-ppl/`) runs `eval_wikitext_perplexity.py` to compute
 cross-PPL on all three splits for every (unlearn-checkpoint × eval-triplet)
 pair.
