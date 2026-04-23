@@ -9,29 +9,33 @@
 整个项目是"**训练一个 forget-set audit 预测器**"的 pipeline。五阶段在**两条** path 上运转：
 
 ```
-训练审计器：  ①  →  ②  →  ③  ────────────→  ⑤   (y from ③, X 在 ⑤ 内部现算)
-                                                 ↑
-部署审计器：  ①  ──────────────────────────────┘   (X 现算，秒级；不跑 unlearn)
+训练审计器：  ①  →  ②  →  ③  ──────────────→  ⑤    (y from ③, X from ④)
+                │                              ↑
+                └──────→  ④  ─────────────────┘
+                          ↑
+部署审计器：  ①  ────────→  ④  ─────────→  ⑤    (X from ④, 不跑 unlearn)
 ```
 
 | Path | 阶段 | 产物 | 角色 |
 |---|---|---|---|
-| **训练闭环** | ① → ② → ③ → ⑤ | 三层 ground truth `(L1, L2, L3)` → 监督信号 `y` | **建模**：学 `几何 → corruption` 的映射 |
-| **部署闭环** | ① → ⑤ (推理) | 新 forget set 的文本 → ⑤ 内部 embed + 算几何 → 审计器给预测 | **推理**：对新 forget set 秒级排序预警 |
+| **训练闭环** | ① → ② → ③ → ⑤；平行 ① → ④ | `y` = 三层 ground truth (L1/L2/L3)；`X` = ④ 的 CSV | **建模**：学 `几何 → corruption` 的映射 |
+| **部署闭环** | ① → ④ → ⑤ (推理) | 新 forget set 文本 → ④ 提几何 → ⑤ 审计器给预测 | **推理**：对新 forget set 秒级排序预警 |
 
-**Paper headline 的 X 是 12 维 forget-set 内禀几何**（`emb_variance_mean / pairwise_sim_mean / centroid_norm / effective_rank / isotropy / spread_over_centroid` 等），**在 [`5.audit/regression-predictor/4.audit_experiments.py`](5.audit/regression-predictor/4.audit_experiments.py) 内部现算**（Sentence-Transformer `all-MiniLM-L6-v2` embed + 几何统计 → `audit/part2_forget_features.csv`）。**不**依赖阶段 ④ 的 `features.csv`。
+**Paper headline 的 X**（`5.audit/regression-predictor/4.audit_experiments.py` 消费）是 **12 维 forget-set 内禀几何**：`emb_variance_mean / pairwise_sim_mean / centroid_norm / effective_rank / isotropy / spread_over_centroid` 等。它**存在阶段 ④** 的 [`4.feature-engineering/forget_set_geometry.csv`](4.feature-engineering/forget_set_geometry.csv)，由 [`scripts/extract_forget_geometry.py`](4.feature-engineering/scripts/extract_forget_geometry.py) 产出（Sentence-Transformer `all-MiniLM-L6-v2` embed + 几何统计）。
 
-**阶段 ④（`4.feature-engineering/features.csv`，262 维）是 ablation 对照的 feature store**，被 `1.training_data.py` + `2.train_rf.py` 消费，用于跑"262 维 surface+几何混合 RF"作为 paper 的旁路基线（回答"如果把一切 surface 特征都喂给 RF，比纯 12 维几何强多少？" —— 目前的答案是：surface 主要学 text-hardness，不是 forget-set 数据性质）。**不**在 paper headline 路径上。
+**并行视角的 X**（`3.corruption_from_geometry.py` 消费）是 **16 维 per-sample target↔forget 交互几何**，存在 [`4.feature-engineering/per_sample_geometry.csv`](4.feature-engineering/per_sample_geometry.csv)（5000 × 19），由 [`scripts/extract_per_sample_geometry.py`](4.feature-engineering/scripts/extract_per_sample_geometry.py) 产出。阶段 ⑤ 的 LOGO-CV 在此基础上 JOIN label 后跑 Ridge / GB / RF。
 
-**关键解耦**：阶段 ⑤ 的 headline 脚本 `4.audit_experiments.py` **只读**
-- 阶段 ① 的 `1.data-preparation/.../triplet_NNN/train.json`（forget set 原文本）
-- 阶段 ③ 的 `3.inference/extract-ppl/wikitext_cross_metrics_detail.json`（y）
+**关键解耦**（2026-04-23 重构落地）：
+- **阶段 ④ 只读 triplet 原文本**：`1.data-preparation/.../triplet_NNN/{train,test}.json`，**从不**依赖阶段 ② 的 ckpt 或阶段 ③ 的 PPL JSON。这让 `extract_*_geometry(text)` 成为**纯函数**（秒级、不跑 GPU unlearn）。
+- **阶段 ⑤ 不再内部 embed**：`4.audit_experiments.py` 从 ④ 读 CSV，不自己算几何；`3.corruption_from_geometry.py` 也从 ④ 读，再 JOIN 阶段 ③ 的 label。唯一例外是 `part3_coverage`（validation vs forget 的覆盖度），当前仍在 ⑤ 内部 embed，可视为 TODO。
 
-**从不 import** 阶段 ② 的 ckpt 路径、**从不**读阶段 ④ 的产物。这让 `extract_12d_geometry(forget_set_text)` 成为一个**纯函数**（秒级、不跑 GPU unlearn），这正是 Act II「不跑 unlearn 只看 forget set 几何」主张能成立的代码前提。
+这就是 Act II「不跑 unlearn 只看 forget set 几何」主张能成立的**代码前提**：部署时 forget set 的文本经过纯 ④ 的特征函数就能出 X，根本不需要 ② 和 ③ 的 GPU 开销。
 
 **审计器的价值在部署 path**：训练 path 贵（② ③ 要真跑 unlearn + N×N cross-eval），但只做**一次**；之后对每个候选 forget set，部署 path 只要 ~秒级推理就能排序预警。这是"粗筛 → 只对 top-k 真跑 unlearn"的算力账本。
 
-阶段 ⑤ 是两条 path 的**唯一交汇点**：训练时 headline 脚本 JOIN `(X 现算, y from ③)` 做 Ridge LOO；推理时只跑 `X 现算 → audit.predict`。任何改动 ⑤ 的特征函数 / 回归器，都同时影响训练和部署。
+阶段 ⑤ 是两条 path 的**唯一交汇点**：训练时 JOIN `(X from ④, y from ③)` 做 Ridge LOO；推理时只需 `X from ④ → audit.predict`。任何改动 ⑤ 的回归器 / 特征列选择，都同时影响训练和部署。
+
+**262 维 ablation 分支已移除**（2026-04-23）：原 `4.feature-engineering/` 的 147+53+74 维 surface+几何混合特征、`5.audit/regression-predictor/{1.training_data,2.train_rf}.py`、`5.audit/classifier-predictor/` 整体删除。paper 结论"12 维纯几何足够，surface 特征主要学 text-hardness 不是 forget-set 数据性质"稳定后，保留它只是 tech debt。
 
 ---
 

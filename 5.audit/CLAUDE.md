@@ -1,6 +1,6 @@
 # CLAUDE.md —— 阶段 ⑤「Forget-set Audit」
 
-Paper Act II 的方法论核心：**在不真跑 unlearn 的前提下，用 forget set 的内禀几何去预测它被 unlearn 后会造成的三层 corruption（L1/L2/L3）**。本目录的产物是所有 slides / README / paper 引用的 headline 数字。
+Paper Act II 的方法论核心：**在不真跑 unlearn 的前提下**，用 forget set 的内禀几何去预测它被 unlearn 后会造成的三层 corruption (L1/L2/L3)。本目录的产物是所有 slides / README / paper 引用的 headline 数字。
 
 根目录约定见 [`../CLAUDE.md`](../CLAUDE.md)；上游契约见 [`../3.inference/CLAUDE.md`](../3.inference/CLAUDE.md) 和 [`../4.feature-engineering/CLAUDE.md`](../4.feature-engineering/CLAUDE.md)。
 
@@ -11,65 +11,62 @@ Paper Act II 的方法论核心：**在不真跑 unlearn 的前提下，用 forg
 | 做什么 | 不做什么 |
 |---|---|
 | 用 forget-set 几何预测 L1/L2/L3 | 重新跑 unlearn 或 PPL |
-| LOO / bootstrap CI / held-out R²/MAE 三件套 | 提特征（属阶段 ④） |
+| 从 ④ 读 X + 从 ③ 读 y → Ridge LOO / LOGO | 提特征（**阶段 ④ 已做**，这里只 JOIN） |
 | 产 `audit_summary.json` —— paper headline | paper 叙事 / slides 图（属 `z-doc/`） |
 
-## 子目录
+## `regression-predictor/` —— 4 个编号脚本
 
-- [`regression-predictor/`](regression-predictor/) —— **paper 主链**。Ridge / GB / RF on 连续 `log(ppl_ratio)` 或 per-forget-set geo-mean。
-- [`classifier-predictor/`](classifier-predictor/) —— 并行实验分支：把 `ppl_ratio > 阈值` 二值化后用 RF 分类。**不在 paper headline 上**；当作 ablation 保留。
-
-## `regression-predictor/` —— 脚本编号即运行顺序
+脚本编号为 **3/4/5/6**（非 1-based）—— 保留历史编号以维持 git log 连续性；原 `1.training_data.py` / `2.train_rf.py` 随 262 维 ablation 一起在 2026-04-23 移除。**运行顺序**按编号递增：
 
 | 脚本 | 产物 | 用途 |
 |---|---|---|
-| `1.training_data.py` | `training_data.csv` (5000 × 270) | JOIN `4.feature-engineering/features.csv` (X) + `3.inference/extract-ppl/wikitext_cross_metrics_detail.json` (y = `ppl_ratio`) |
-| `2.train_rf.py` | `rf/{results.json, logo_predictions.csv, model_ppl.joblib}` | **旁路分支**：LOGO-CV RF on **262** features；用于对照"surface-heavy features 能做多好"，**不是 paper headline** |
-| `3.corruption_from_geometry.py` | `geometry/{geometry_results.json, geometry_predictions.csv, corruption_geometry_features.csv}` | LOGO-CV Ridge/GB/RF on **16 维纯几何**（target↔forget + forget 内禀 + target 内禀） |
-| `4.audit_experiments.py` | `audit/{part1_*, part2_*, part3_*, audit_summary.json}` | **paper 主 pipeline**：三层 profile + forget-set-level LOO audit (Ridge on 12 维 forget-set 几何) + retain coverage |
+| `3.corruption_from_geometry.py` | `geometry/{geometry_results.json, geometry_predictions.csv, corruption_geometry_features.csv}` | **并行视角**：LOGO-CV by `eval_triplet` 在 **16 维 per-sample** 几何上跑 Ridge / GB / RF → 对照 Ridge 的可学习性 |
+| `4.audit_experiments.py` | `audit/{part1_*, part2_*, part3_*, audit_summary.json}` | **paper headline**：LOO by `forget_cluster` 在 **12 维 per-forget-set** 几何上跑 Ridge → L1/L2/L3 R²/ρ |
 | `5.bootstrap_rho_ci.py` | 追加 `bootstrap_rho_ci` 到 `audit_summary.json` | Spearman ρ 95% CI（percentile, n_boot=10000, seed=0） |
 | `6.heldout_r2_mae.py` | 追加 `heldout_r2_mae` 到 `audit_summary.json` | LOO held-out R²/MAE + LOO-mean baseline 对照 |
 
-**典型运行顺序**：`1 → 3 → 4 → 5 → 6`。脚本 `2` 是旁路，不在 headline 路径。
-
 ## 上下游契约
 
-**读**：
-- `../4.feature-engineering/features.csv` —— 5000 × 262 features
-- `../3.inference/extract-ppl/wikitext_cross_metrics_detail.json` —— 100 pair × 50 sample per-sample base/unlearn loss+ppl
-- `../1.data-preparation/data/wikitext_hdbscan_triplets/triplet_NNN/` —— 只在 `3.corruption_from_geometry.py` 和 `4.audit_experiments.py` 里重新算 embedding 用
+**读 阶段 ④**（`X`，本阶段**不再内部 embed**）：
+- `../4.feature-engineering/forget_set_geometry.csv` —— 12 维 per-forget-set 几何（`4.audit_experiments.py` 的 `part2_forget_features` 读）
+- `../4.feature-engineering/per_sample_geometry.csv` —— 16 维 per-sample 几何（`3.corruption_from_geometry.py` 的 `build_features` 读，再 JOIN 上 label）
+
+**读 阶段 ③**（`y`）：
+- `../3.inference/extract-ppl/wikitext_cross_metrics_detail.json` —— 读 per-sample base/unlearn ppl 算 `log_ppl_ratio`
+
+**读 阶段 ①**（仅 `4.audit_experiments.py` 的 `part3_coverage` 还在用）：
+- `../1.data-preparation/data/wikitext_hdbscan_triplets/triplet_NNN/{train,validation}.json` —— retain-coverage 要 embed forget + validation 对比
 
 **写（paper headline）**：
-- `regression-predictor/audit/audit_summary.json` —— 顶级字段：
+- `regression-predictor/audit/audit_summary.json` —— 顶层字段：
   - `layer_headline` (L1/L2/L3 geo-mean)
-  - `audit_predictor` (LOO R², ρ, r on 12 维 forget-set 几何)
+  - `audit_predictor` (LOO R²/ρ/r on 12 维 forget-set 几何)
   - `coverage_vs_spillover` (retain coverage 与 L3 spillover 相关性)
   - `bootstrap_rho_ci` (95% CI)
   - `heldout_r2_mae` (LOO R²/MAE + baseline 对照)
 
 ## 对 Claude 的具体要求
 
-1. **`ROOT = parents[2]`**（仓库根），**不是 `parents[1]`**（=`5.audit/`）。脚本 1/3/4 已按此约定修好（2026-04-23），新增脚本写路径常量必须对齐。
-2. **不归档旧 audit 产物**：切换 unlearn 配置 / 扩 n 时直接覆盖 `audit/ geometry/ rf/`。要回看旧数字用 `git show <sha>:...`，**不要在文件系统里留副本** —— 会让下游文档引用不知道指向哪版。
-3. **Paper narrative 用 12/16 维纯几何，不是 262 feat**：脚本 `4.audit_experiments.py` 的 12 维 forget-set 几何是 paper headline；`3.corruption_from_geometry.py` 的 16 维是 per-sample 视角的验证；`2.train_rf.py` 的 262 维 RF 只是 ablation/旁路。汇报数字**先报 4 的 Part 2**。
-4. **n=10 的 L3 R² 负值是预期**：bootstrap CI 跨零已证 LOO n=10 对 L3 信号量不够。**不是 bug**，是扩 n 的动机。`STATE.md` 里解释与 slides 一致。
-5. **Ridge alpha 目前写死 1.0**：未来扩 n 时建议加 GridSearchCV (alpha ∈ [0.01..10])。当前 TODO，不阻塞。
+1. **`ROOT = parents[2]`**（仓库根），**不是 `parents[1]`**（=`5.audit/`）。脚本 3/4 已按此修好（2026-04-23），新增脚本写路径常量必须对齐。
+2. **不在本阶段重新算 embedding / 几何**：所有 X 都来自阶段 ④ 的 CSV。`4.audit_experiments.py` 的 `part3_coverage` 是唯一例外（目前为了 validation vs forget 的覆盖度仍在内部 embed）—— 如果未来 retain-coverage 要扩展，优先把 embed 逻辑也搬到 ④，保持阶段 ⑤ 纯粹。
+3. **旧产物不归档**：切换 unlearn 配置 / 扩 n 时直接覆盖 `audit/ geometry/`。要回看旧数字用 `git show <sha>:...`，不要在文件系统留副本。
+4. **Paper narrative 用 12 维 forget-set 几何**：`4.audit_experiments.py` 产的 `audit/audit_summary.json` 里 `audit_predictor` 字段是 headline；`3.corruption_from_geometry.py` 的 16 维 per-sample 几何是**并行视角**的验证。汇报数字先报 4 的 Part 2。
+5. **n=10 的 L3 R² 负值是预期**：bootstrap CI 跨零已证 LOO n=10 对 L3 信号量不够。**不是 bug**，是扩 n 的动机。`STATE.md` 里解释与 slides 一致。
+6. **Ridge alpha 当前写死 1.0**：扩 n 时建议加 GridSearchCV (alpha ∈ [0.01..10])。当前 TODO，不阻塞。
 
 ## 已踩过的坑（留档）
 
-1. **`parents[1]` 陷阱**（2026-04-23 修）：旧目录 `4.regression-predictor/` 在仓库根，`parents[1]` = 仓库根；现在 `5.audit/regression-predictor/`，`parents[1]` = `5.audit/`，`ROOT / "1.data-preparation"` 变成 `5.audit/1.data-preparation`（不存在）。**必须 `parents[2]`**。脚本 1/3/4 已修。
+1. **`parents[1]` 陷阱**（2026-04-23 修）：旧目录 `4.regression-predictor/` 在仓库根，`parents[1]` = 仓库根；现在 `5.audit/regression-predictor/`，`parents[1]` = `5.audit/`，`ROOT / "1.data-preparation"` 变成 `5.audit/1.data-preparation`（不存在）。**必须 `parents[2]`**。脚本 3/4 已修。
 
 2. **`extract-ppl` 路径过期**：`ROOT / "2.extract-ppl" / "wikitext_cross_metrics_detail.json"` → 实际在 `3.inference/extract-ppl/`。脚本 3/4 已改。
 
-3. **`feature-engineering` 路径过期**：`ROOT.parent / "feature-engineering" / "features.csv"` → 实际在 `4.feature-engineering/features.csv`，且 `ROOT.parent` 在新目录下是 `5.audit/` 不是仓库根。脚本 1 已改（新增 `REPO = ROOT.parents[1]`）。
+3. **cached `corruption_geometry_features.csv` 静默污染**（2026-04-23 发现）：`3.corruption_from_geometry.py` 的 main 逻辑 "if csv exists: read; else: build"。切换 unlearn 配置（max_steps=2 → 5）时如果没清 cache CSV，会**静默**继续用旧 label 跑 RF，导出"看起来对但数字是旧配置的"结果。**修法**：切换 unlearn 配置前 `rm -f 5.audit/regression-predictor/geometry/corruption_geometry_features.csv`。同样对 `audit/` 下的 part2/part3 CSV（但这些是每次 overwrite 不用担心）。
 
-4. **`training_data.csv` JOIN 静默丢行**：JOIN key = `(eval_triplet, sample_index)`。如果上游 `features.csv` 的 `sample_index` 语义漂移（例如从 test split 改到 train），merge 会丢样本或产 NaN 而不报错。建议在 `1.training_data.py` 加 `assert len(joined) == 100 * 50`。
+4. **LOO n=10 下 Spearman ρ 对噪声敏感**：同一组 (true, pred) 改 1 个值 ρ 可能从 +0.6 跳到 +0.3。Bootstrap CI 是唯一可靠的稳健性报告方式，不要只引用点估 ρ。
 
-5. **LOO n=10 下 Spearman ρ 对噪声敏感**：同一组 (true, pred) 改 1 个值 ρ 可能从 +0.6 跳到 +0.3。Bootstrap CI 是唯一可靠的稳健性报告方式，不要只引用点估 ρ。
+5. **262 维 ablation 已移除**（2026-04-23）：原 `1.training_data.py` / `2.train_rf.py` 读 `4.feature-engineering/features.csv`（262 维 surface+几何混合）跑 RF baseline。paper 结论"12 维纯几何足够"后，该分支以及 `classifier-predictor/` 子目录整体删除。
 
-6. **`cluster_features.csv` 可选依赖**：`analyze_corruption.py` 会尝试读（不在本目录），不存在时 silently skip。当前未生成，不阻塞，但日志里会有一行 `Errno 2: No such file ...`。
-
-## Smoke test（~3 min，纯数值无 GPU，但 sentence-transformer 要 GPU + `HF_HUB_CACHE`）
+## Smoke test（~3 min，纯数值 + 一次 sentence-transformer embed for coverage）
 
 ```bash
 cd 5.audit/regression-predictor
@@ -77,12 +74,21 @@ source /media/volume/llm/miniconda3/etc/profile.d/conda.sh && conda activate unl
 export HF_HUB_CACHE=/media/volume/llm/huggingface/hub \
        HF_DATASETS_CACHE=$HOME/.cache/huggingface/datasets \
        CUDA_HOME=$HOME/fake_cuda
-python 1.training_data.py
-python 3.corruption_from_geometry.py
-python 4.audit_experiments.py
-python 5.bootstrap_rho_ci.py
-python 6.heldout_r2_mae.py
+
+# 先清 cache 避免旧数字污染
+rm -f geometry/corruption_geometry_features.csv
+
+python 3.corruption_from_geometry.py    # 16 维 LOGO-CV
+python 4.audit_experiments.py           # 12 维 LOO → audit_summary.json
+python 5.bootstrap_rho_ci.py            # 追加 CI
+python 6.heldout_r2_mae.py              # 追加 held-out + baseline
+
 python3 -c "import json; s=json.load(open('audit/audit_summary.json')); print(sorted(s.keys()))"
 ```
 
-期望（n=10 TOFU-aligned 实测 2026-04-23）：5 个顶级 key；L1 R²=+0.292 / L2=+0.523 / L3=−0.458；ρ(L1)=+0.624 CI [+0.08,+0.91]；ρ(L2)=+0.842 CI [+0.43,+1.00]；audit L1/L2 胜 LOO-mean baseline（baseline 三层都是 R²=−0.235）。
+期望（n=10 TOFU-aligned 实测 2026-04-23）：
+- 5 个顶级 key：`layer_headline / audit_predictor / coverage_vs_spillover / bootstrap_rho_ci / heldout_r2_mae`
+- audit_predictor L1 R²=+0.292 / L2=+0.523 / L3=−0.458
+- bootstrap_rho_ci L1 [+0.08, +0.91] / L2 [+0.43, +1.00] / L3 [−0.51, +0.71]
+- heldout audit 胜 LOO-mean baseline（baseline 三层都是 R²=−0.235）：L1 / L2 胜，L3 输（n=10 信号不足，扩 n=100 的动机）
+- 3.corruption_from_geometry LOGO-CV（16 维）：mean_baseline R²=−0.017 / Ridge +0.225 / GB +0.215 / RF +0.175 / RF L3-only +0.016

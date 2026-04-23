@@ -30,8 +30,8 @@
 | `1.data-preparation/CLAUDE.md` | 阶段 ① 数据冻结契约 / schema |
 | `2.train-unlearn/CLAUDE.md` | 阶段 ② unlearn 配置 + **新机器 env bootstrap**（HF cache / CUDA_HOME / hydra `++`） |
 | `3.inference/CLAUDE.md` | 阶段 ③ cross-PPL + 踩过的 glob bug / baseline 复用规则 |
-| `4.feature-engineering/CLAUDE.md` | 阶段 ④ 特征与 ckpt 解耦 / 262 维 ablation store 定位 |
-| `5.audit/CLAUDE.md` | 阶段 ⑤ `parents[2]` 路径规约 / 12 维 headline vs 262 维旁路的角色分工 |
+| `4.feature-engineering/CLAUDE.md` | 阶段 ④ 纯几何特征 store（12 维 forget + 16 维 per-sample），与 ckpt / PPL 完全解耦 |
+| `5.audit/CLAUDE.md` | 阶段 ⑤ `parents[2]` 路径规约 / 只读 ④ 的 CSV 不再内部 embed / 4 脚本主链 3→4→5→6 |
 
 **读子目录 CLAUDE.md 必须做的**：
 - 其「对 Claude 的具体要求」和「已踩过的坑」——是前人调试后留的硬约束，**不要再撞一次**
