@@ -54,7 +54,7 @@ OpenUnlearning 的启动命令偏长（Hydra override 一堆），`unlearn/*.sh`
 | `wikitext_unlearn_sample.sh` | 单 triplet smoke-test（验证端到端能跑） | 深度配置（`max_steps=150`, `epoch=10`） |
 | `wikitext_unlearn.sh` | 单 triplet 浅配置 | `max_steps=2`, `epoch=1`（历史 batch 用的浅配置，已知偏浅，见 STATE.md 阶段 ② 决策点） |
 | `wikitext_unlearn_batch.sh` | 循环 100 个 triplet 的批量浅 unlearn | 同上浅配置 |
-| `wikitext_unlearn_tofu_aligned.sh` | **当前主配置**，对齐 TOFU 默认超参 | `max_steps=3, epoch=5, bs=16, gas=4, lr=1e-5, optim=paged_adamw_32bit`（见 STATE.md 阶段 ② 训练配置表） |
+| `wikitext_unlearn_tofu_aligned.sh` | **当前主配置**，对齐 TOFU 默认超参 | `max_steps=5, epoch=5, bs=16, gas=4, lr=1e-5, optim=paged_adamw_32bit`（见 STATE.md 阶段 ② 训练配置表） |
 
 PPL 评测不在本目录 —— 由阶段 ③（`../3.inference/extract-ppl/`）负责；本阶段只产 checkpoint。
 
