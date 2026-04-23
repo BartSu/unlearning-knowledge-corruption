@@ -62,34 +62,36 @@
 
 ### 训练配置
 
-| 维度 | 值 | 备注 |
-|---|---|---|
-| Forget / Retain 规模 | 50 / 50 | triplet schema 决定 |
-| `num_train_epochs` | 5 | 数据被看 5 遍 |
-| `per_device_train_batch_size` | 16 | |
-| `gradient_accumulation_steps` | 4 | 累积 4 个 micro-batch 再更新一次权重 |
-| `num_devices` | 1 | 单卡 H100 |
-| `effective_batch` | 64 | = 16 × 4 × 1 |
-| `learning_rate` | 1e-5 | |
-| `lr_scheduler_type` | `linear` | HF Trainer 默认（未显式覆盖） |
-| `warmup_steps` | 1 | = `max(1, steps_per_epoch)` |
-| `optim` | `paged_adamw_32bit` | optimizer state 可 page 到 CPU |
-| `weight_decay` | 0.01 | |
-| `bf16` | True | 混合精度 |
-| `max_steps` | 3 | 硬卡权重更新次数；open-unlearning 的 dataloader per-epoch step 行为未知，用 max_steps 钉死 |
-| `samples_seen` | 250 | = 50 × 5 |
+| 维度 | 脚本声明 | **实际跑出** | 备注 |
+|---|---|---|---|
+| Forget / Retain 规模 | 50 / 50 | 50 / 50 | triplet schema 决定 |
+| `num_train_epochs` | 5 | **3** | ⚠️ HF Trainer 中 `max_steps` 优先级 > `num_train_epochs`；50 样本 / effective_bs=64 ≈ 每 epoch 1 step，所以 3 steps = 3 epochs 就停 |
+| `per_device_train_batch_size` | 16 | 16 | |
+| `gradient_accumulation_steps` | 4 | 4 | 累积 4 个 micro-batch 再更新一次权重 |
+| `num_devices` | 1 | 1 | 单卡 H100 |
+| `effective_batch` | 64 | 64 | = 16 × 4 × 1 |
+| `learning_rate` | 1e-5 | 1e-5 → 5e-6 → 0（linear） | |
+| `lr_scheduler_type` | `linear` | `linear` | HF Trainer 默认 |
+| `warmup_steps` | 1 | 1 | = `max(1, steps_per_epoch)` |
+| `optim` | `paged_adamw_32bit` | 同 | optimizer state 可 page 到 CPU |
+| `weight_decay` | 0.01 | 0.01 | |
+| `bf16` | True | True | 混合精度 |
+| `max_steps` | 3 | `global_step=3` ✓ | 硬钉；控制实际收敛到此为止 |
+| `samples_seen` | 250 (= 50×5) | **150** (= 50×3) | 实际数据只被看 3 遍，不是 5 |
+
+> **要让 epoch=5 真正生效**，需同步把 `max_steps` 提到 ≥ 5（或去掉 `max_steps`，让 Trainer 按 `num_train_epochs` 自己算步数）。当前脚本两者并存是隐性冲突，以 `max_steps` 为实际控制量。
 
 > **显存**：Llama-3.1-8B bf16 + `BS=16 × seq_len=500` 在单卡 H100 80GB 上可能逼近上限（模型 16 GB + paged_adamw optimizer 可 page 到 CPU + 激活 ~20 GB）。若 OOM 降到 `BS=8 GAS=8` 或 `BS=4 GAS=16`（effective_bs 均 = 64，优化等价）。
 
 ### 跑满 10 × 10 数据集（100 triplets）的时间预算
 
-单 triplet 的主要开销：
-- **Model load**（从磁盘加载 Llama-3.1-8B bf16 16 GB checkpoint）：H100 SSD 下 ~15–25 s
-- **训练**（3 step × GAS=16 × BS=4 × (forget+retain) ≈ 384 sample forward+backward）：H100 bf16 大约 **5–10 s**
-- **Tokenization / dataloader / hydra init**：~5–10 s
-- **Save checkpoint**（~16 GB bf16）：~10–15 s
+**实测**（triplet_001，2026-04-23，H100 单卡）：
+- `train_runtime` = **65.5 s**（3 steps 的纯训练）
+- `wall_seconds` = **139 s**（含加载 / tokenize / save ckpt 的总耗时）
+- `train_samples_per_second` = 2.93, `train_steps_per_second` = 0.046
 
-**单 triplet 总耗时估**：**45–70 s**
-**100 triplet 全量**：**~1.5–2 h**（保守上界 3 h，含磁盘 IO 抖动）
+**100 triplet 全量预估**：**≈ 3.9 h**（= 139 s × 100）。比原估 1.5–2 h 翻倍，主要差在加载 / save ckpt 的 IO 开销（~75 s / triplet），不是 GPU 计算。
+
+**当前进度**：TOFU-aligned 只跑通 triplet_001（`saves/wikitext_unlearn_tofu/` 内 1 个 ckpt），99 个待铺。历史 100 浅配置 ckpt（`saves/wikitext_unlearn/`，max_steps=2 / epoch=1）仍在盘上。
 
 写满 100 个 Llama-8B ckpt 需要 **~1.6 TB** 存储，与现有 `saves/wikitext_unlearn/` 同量级。如果保留现有浅 ckpt + 新 TOFU ckpt，盘占倍增，必要时先挑一个归档/删除。
