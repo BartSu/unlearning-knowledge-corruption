@@ -46,8 +46,9 @@
 
     \vspace{0.5em}
     \textbf{Benchmarking pain point.}
-    One unlearn + $N\!\times\!N$ cross-eval $\approx$ several GPU-hours;
-    sweeping 100 candidate forget sets $\Rightarrow$ hundreds of GPU-hours, \emph{does not scale}.
+    Studying this \emph{systematically} --- establishing the pattern and comparing
+    100 candidate forget sets --- needs $N$ unlearn runs + an $N \!\times\! N$ cross-PPL matrix.
+    Cost scales quadratically; our $N=100$ already takes several GPU-hours.
 
     \vspace{0.8em}
     \begin{center}
