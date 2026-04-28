@@ -1,0 +1,15 @@
+*.json
+*.csv
+*.png
+*.parquet
+*.jsonl
+
+# whitelist published artefacts for fresh-clone reproduce
+# (NOTE: wikitext_cross_metrics_detail.json is NOT whitelisted —
+#  it is ~315 MB on n=100 and exceeds GitHub's 100 MB single-file limit;
+#  fresh-clone reproduces it via eval_wikitext_perplexity.py.)
+!corruption_summary.json
+!wikitext_baseline.json
+
+# in-progress n=50 run logs
+logs_n50/

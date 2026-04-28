@@ -1,0 +1,1409 @@
+{
+  "schema_version": 2,
+  "evaluation_scope": "per_triplet",
+  "model": "meta-llama/Llama-3.1-8B-Instruct",
+  "data_dir": "/media/volume/llm/unlearning/1.data-preparation/data/wikitext_hdbscan_triplets",
+  "text_field": "text",
+  "triplets": {
+    "triplet_001": {
+      "train": {
+        "loss": 2.21728,
+        "ppl": 9.18
+      },
+      "validation": {
+        "loss": 2.303774,
+        "ppl": 10.01
+      },
+      "test": {
+        "loss": 2.207947,
+        "ppl": 9.1
+      }
+    },
+    "triplet_011": {
+      "train": {
+        "loss": 2.276859,
+        "ppl": 9.75
+      },
+      "validation": {
+        "loss": 2.218789,
+        "ppl": 9.2
+      },
+      "test": {
+        "loss": 2.284773,
+        "ppl": 9.82
+      }
+    },
+    "triplet_021": {
+      "train": {
+        "loss": 2.23572,
+        "ppl": 9.35
+      },
+      "validation": {
+        "loss": 2.317268,
+        "ppl": 10.15
+      },
+      "test": {
+        "loss": 2.214493,
+        "ppl": 9.16
+      }
+    },
+    "triplet_031": {
+      "train": {
+        "loss": 2.592228,
+        "ppl": 13.36
+      },
+      "validation": {
+        "loss": 2.534962,
+        "ppl": 12.62
+      },
+      "test": {
+        "loss": 2.682137,
+        "ppl": 14.62
+      }
+    },
+    "triplet_041": {
+      "train": {
+        "loss": 2.257246,
+        "ppl": 9.56
+      },
+      "validation": {
+        "loss": 2.150969,
+        "ppl": 8.59
+      },
+      "test": {
+        "loss": 2.210364,
+        "ppl": 9.12
+      }
+    },
+    "triplet_051": {
+      "train": {
+        "loss": 2.337334,
+        "ppl": 10.35
+      },
+      "validation": {
+        "loss": 2.45662,
+        "ppl": 11.67
+      },
+      "test": {
+        "loss": 2.502135,
+        "ppl": 12.21
+      }
+    },
+    "triplet_061": {
+      "train": {
+        "loss": 2.347025,
+        "ppl": 10.45
+      },
+      "validation": {
+        "loss": 2.387868,
+        "ppl": 10.89
+      },
+      "test": {
+        "loss": 2.449608,
+        "ppl": 11.58
+      }
+    },
+    "triplet_071": {
+      "train": {
+        "loss": 2.271945,
+        "ppl": 9.7
+      },
+      "validation": {
+        "loss": 2.259093,
+        "ppl": 9.57
+      },
+      "test": {
+        "loss": 2.305286,
+        "ppl": 10.03
+      }
+    },
+    "triplet_081": {
+      "train": {
+        "loss": 2.334388,
+        "ppl": 10.32
+      },
+      "validation": {
+        "loss": 2.379098,
+        "ppl": 10.8
+      },
+      "test": {
+        "loss": 2.494499,
+        "ppl": 12.12
+      }
+    },
+    "triplet_091": {
+      "train": {
+        "loss": 2.324255,
+        "ppl": 10.22
+      },
+      "validation": {
+        "loss": 2.241143,
+        "ppl": 9.4
+      },
+      "test": {
+        "loss": 2.180968,
+        "ppl": 8.85
+      }
+    },
+    "triplet_002": {
+      "train": {
+        "loss": 2.22378,
+        "ppl": 9.24
+      },
+      "validation": {
+        "loss": 2.237337,
+        "ppl": 9.37
+      },
+      "test": {
+        "loss": 2.309206,
+        "ppl": 10.07
+      }
+    },
+    "triplet_003": {
+      "train": {
+        "loss": 2.217809,
+        "ppl": 9.19
+      },
+      "validation": {
+        "loss": 2.175031,
+        "ppl": 8.8
+      },
+      "test": {
+        "loss": 2.275829,
+        "ppl": 9.74
+      }
+    },
+    "triplet_004": {
+      "train": {
+        "loss": 2.239473,
+        "ppl": 9.39
+      },
+      "validation": {
+        "loss": 2.28024,
+        "ppl": 9.78
+      },
+      "test": {
+        "loss": 2.245555,
+        "ppl": 9.45
+      }
+    },
+    "triplet_005": {
+      "train": {
+        "loss": 2.281815,
+        "ppl": 9.79
+      },
+      "validation": {
+        "loss": 2.251289,
+        "ppl": 9.5
+      },
+      "test": {
+        "loss": 2.253492,
+        "ppl": 9.52
+      }
+    },
+    "triplet_012": {
+      "train": {
+        "loss": 2.197732,
+        "ppl": 9.0
+      },
+      "validation": {
+        "loss": 2.355469,
+        "ppl": 10.54
+      },
+      "test": {
+        "loss": 2.329321,
+        "ppl": 10.27
+      }
+    },
+    "triplet_013": {
+      "train": {
+        "loss": 2.249867,
+        "ppl": 9.49
+      },
+      "validation": {
+        "loss": 2.222528,
+        "ppl": 9.23
+      },
+      "test": {
+        "loss": 2.28738,
+        "ppl": 9.85
+      }
+    },
+    "triplet_014": {
+      "train": {
+        "loss": 2.193728,
+        "ppl": 8.97
+      },
+      "validation": {
+        "loss": 2.346977,
+        "ppl": 10.45
+      },
+      "test": {
+        "loss": 2.314444,
+        "ppl": 10.12
+      }
+    },
+    "triplet_015": {
+      "train": {
+        "loss": 2.261918,
+        "ppl": 9.6
+      },
+      "validation": {
+        "loss": 2.251544,
+        "ppl": 9.5
+      },
+      "test": {
+        "loss": 2.349467,
+        "ppl": 10.48
+      }
+    },
+    "triplet_022": {
+      "train": {
+        "loss": 2.280865,
+        "ppl": 9.79
+      },
+      "validation": {
+        "loss": 2.309512,
+        "ppl": 10.07
+      },
+      "test": {
+        "loss": 2.247151,
+        "ppl": 9.46
+      }
+    },
+    "triplet_023": {
+      "train": {
+        "loss": 2.286619,
+        "ppl": 9.84
+      },
+      "validation": {
+        "loss": 2.25068,
+        "ppl": 9.49
+      },
+      "test": {
+        "loss": 2.233201,
+        "ppl": 9.33
+      }
+    },
+    "triplet_024": {
+      "train": {
+        "loss": 2.171273,
+        "ppl": 8.77
+      },
+      "validation": {
+        "loss": 2.231277,
+        "ppl": 9.31
+      },
+      "test": {
+        "loss": 2.268468,
+        "ppl": 9.66
+      }
+    },
+    "triplet_025": {
+      "train": {
+        "loss": 2.196358,
+        "ppl": 8.99
+      },
+      "validation": {
+        "loss": 2.214221,
+        "ppl": 9.15
+      },
+      "test": {
+        "loss": 2.296443,
+        "ppl": 9.94
+      }
+    },
+    "triplet_032": {
+      "train": {
+        "loss": 2.434354,
+        "ppl": 11.41
+      },
+      "validation": {
+        "loss": 2.597615,
+        "ppl": 13.43
+      },
+      "test": {
+        "loss": 2.64546,
+        "ppl": 14.09
+      }
+    },
+    "triplet_033": {
+      "train": {
+        "loss": 2.604618,
+        "ppl": 13.53
+      },
+      "validation": {
+        "loss": 2.60187,
+        "ppl": 13.49
+      },
+      "test": {
+        "loss": 2.558002,
+        "ppl": 12.91
+      }
+    },
+    "triplet_034": {
+      "train": {
+        "loss": 2.53161,
+        "ppl": 12.57
+      },
+      "validation": {
+        "loss": 2.575914,
+        "ppl": 13.14
+      },
+      "test": {
+        "loss": 2.548884,
+        "ppl": 12.79
+      }
+    },
+    "triplet_035": {
+      "train": {
+        "loss": 2.690327,
+        "ppl": 14.74
+      },
+      "validation": {
+        "loss": 2.529701,
+        "ppl": 12.55
+      },
+      "test": {
+        "loss": 2.541726,
+        "ppl": 12.7
+      }
+    },
+    "triplet_042": {
+      "train": {
+        "loss": 2.183054,
+        "ppl": 8.87
+      },
+      "validation": {
+        "loss": 2.106046,
+        "ppl": 8.22
+      },
+      "test": {
+        "loss": 2.199475,
+        "ppl": 9.02
+      }
+    },
+    "triplet_043": {
+      "train": {
+        "loss": 2.255609,
+        "ppl": 9.54
+      },
+      "validation": {
+        "loss": 2.238896,
+        "ppl": 9.38
+      },
+      "test": {
+        "loss": 2.157245,
+        "ppl": 8.65
+      }
+    },
+    "triplet_044": {
+      "train": {
+        "loss": 2.183821,
+        "ppl": 8.88
+      },
+      "validation": {
+        "loss": 2.19294,
+        "ppl": 8.96
+      },
+      "test": {
+        "loss": 2.249528,
+        "ppl": 9.48
+      }
+    },
+    "triplet_045": {
+      "train": {
+        "loss": 2.236605,
+        "ppl": 9.36
+      },
+      "validation": {
+        "loss": 2.16174,
+        "ppl": 8.69
+      },
+      "test": {
+        "loss": 2.205007,
+        "ppl": 9.07
+      }
+    },
+    "triplet_052": {
+      "train": {
+        "loss": 2.439673,
+        "ppl": 11.47
+      },
+      "validation": {
+        "loss": 2.390802,
+        "ppl": 10.92
+      },
+      "test": {
+        "loss": 2.390263,
+        "ppl": 10.92
+      }
+    },
+    "triplet_053": {
+      "train": {
+        "loss": 2.344839,
+        "ppl": 10.43
+      },
+      "validation": {
+        "loss": 2.365715,
+        "ppl": 10.65
+      },
+      "test": {
+        "loss": 2.409836,
+        "ppl": 11.13
+      }
+    },
+    "triplet_054": {
+      "train": {
+        "loss": 2.53747,
+        "ppl": 12.65
+      },
+      "validation": {
+        "loss": 2.408649,
+        "ppl": 11.12
+      },
+      "test": {
+        "loss": 2.258122,
+        "ppl": 9.57
+      }
+    },
+    "triplet_055": {
+      "train": {
+        "loss": 2.351783,
+        "ppl": 10.5
+      },
+      "validation": {
+        "loss": 2.430063,
+        "ppl": 11.36
+      },
+      "test": {
+        "loss": 2.426615,
+        "ppl": 11.32
+      }
+    },
+    "triplet_062": {
+      "train": {
+        "loss": 2.439355,
+        "ppl": 11.47
+      },
+      "validation": {
+        "loss": 2.340439,
+        "ppl": 10.39
+      },
+      "test": {
+        "loss": 2.324555,
+        "ppl": 10.22
+      }
+    },
+    "triplet_063": {
+      "train": {
+        "loss": 2.359907,
+        "ppl": 10.59
+      },
+      "validation": {
+        "loss": 2.532284,
+        "ppl": 12.58
+      },
+      "test": {
+        "loss": 2.39259,
+        "ppl": 10.94
+      }
+    },
+    "triplet_064": {
+      "train": {
+        "loss": 2.365508,
+        "ppl": 10.65
+      },
+      "validation": {
+        "loss": 2.534636,
+        "ppl": 12.61
+      },
+      "test": {
+        "loss": 2.399404,
+        "ppl": 11.02
+      }
+    },
+    "triplet_065": {
+      "train": {
+        "loss": 2.360432,
+        "ppl": 10.6
+      },
+      "validation": {
+        "loss": 2.388963,
+        "ppl": 10.9
+      },
+      "test": {
+        "loss": 2.383337,
+        "ppl": 10.84
+      }
+    },
+    "triplet_072": {
+      "train": {
+        "loss": 2.359176,
+        "ppl": 10.58
+      },
+      "validation": {
+        "loss": 2.230502,
+        "ppl": 9.3
+      },
+      "test": {
+        "loss": 2.291485,
+        "ppl": 9.89
+      }
+    },
+    "triplet_073": {
+      "train": {
+        "loss": 2.264991,
+        "ppl": 9.63
+      },
+      "validation": {
+        "loss": 2.194988,
+        "ppl": 8.98
+      },
+      "test": {
+        "loss": 2.256362,
+        "ppl": 9.55
+      }
+    },
+    "triplet_074": {
+      "train": {
+        "loss": 2.320156,
+        "ppl": 10.18
+      },
+      "validation": {
+        "loss": 2.279106,
+        "ppl": 9.77
+      },
+      "test": {
+        "loss": 2.268396,
+        "ppl": 9.66
+      }
+    },
+    "triplet_075": {
+      "train": {
+        "loss": 2.263982,
+        "ppl": 9.62
+      },
+      "validation": {
+        "loss": 2.248162,
+        "ppl": 9.47
+      },
+      "test": {
+        "loss": 2.286325,
+        "ppl": 9.84
+      }
+    },
+    "triplet_082": {
+      "train": {
+        "loss": 2.389042,
+        "ppl": 10.9
+      },
+      "validation": {
+        "loss": 2.366963,
+        "ppl": 10.66
+      },
+      "test": {
+        "loss": 2.325519,
+        "ppl": 10.23
+      }
+    },
+    "triplet_083": {
+      "train": {
+        "loss": 2.3602,
+        "ppl": 10.59
+      },
+      "validation": {
+        "loss": 2.316329,
+        "ppl": 10.14
+      },
+      "test": {
+        "loss": 2.32962,
+        "ppl": 10.27
+      }
+    },
+    "triplet_084": {
+      "train": {
+        "loss": 2.461559,
+        "ppl": 11.72
+      },
+      "validation": {
+        "loss": 2.272298,
+        "ppl": 9.7
+      },
+      "test": {
+        "loss": 2.426573,
+        "ppl": 11.32
+      }
+    },
+    "triplet_085": {
+      "train": {
+        "loss": 2.364522,
+        "ppl": 10.64
+      },
+      "validation": {
+        "loss": 2.345521,
+        "ppl": 10.44
+      },
+      "test": {
+        "loss": 2.355201,
+        "ppl": 10.54
+      }
+    },
+    "triplet_092": {
+      "train": {
+        "loss": 2.273945,
+        "ppl": 9.72
+      },
+      "validation": {
+        "loss": 2.173242,
+        "ppl": 8.79
+      },
+      "test": {
+        "loss": 2.174236,
+        "ppl": 8.8
+      }
+    },
+    "triplet_093": {
+      "train": {
+        "loss": 2.399794,
+        "ppl": 11.02
+      },
+      "validation": {
+        "loss": 2.172231,
+        "ppl": 8.78
+      },
+      "test": {
+        "loss": 2.436079,
+        "ppl": 11.43
+      }
+    },
+    "triplet_094": {
+      "train": {
+        "loss": 2.286145,
+        "ppl": 9.84
+      },
+      "validation": {
+        "loss": 2.41738,
+        "ppl": 11.22
+      },
+      "test": {
+        "loss": 2.251469,
+        "ppl": 9.5
+      }
+    },
+    "triplet_095": {
+      "train": {
+        "loss": 2.213617,
+        "ppl": 9.15
+      },
+      "validation": {
+        "loss": 2.188875,
+        "ppl": 8.93
+      },
+      "test": {
+        "loss": 2.268014,
+        "ppl": 9.66
+      }
+    },
+    "triplet_006": {
+      "train": {
+        "loss": 2.214756,
+        "ppl": 9.16
+      },
+      "validation": {
+        "loss": 2.248254,
+        "ppl": 9.47
+      },
+      "test": {
+        "loss": 2.307171,
+        "ppl": 10.05
+      }
+    },
+    "triplet_007": {
+      "train": {
+        "loss": 2.264296,
+        "ppl": 9.62
+      },
+      "validation": {
+        "loss": 2.274529,
+        "ppl": 9.72
+      },
+      "test": {
+        "loss": 2.183422,
+        "ppl": 8.88
+      }
+    },
+    "triplet_008": {
+      "train": {
+        "loss": 2.205852,
+        "ppl": 9.08
+      },
+      "validation": {
+        "loss": 2.160155,
+        "ppl": 8.67
+      },
+      "test": {
+        "loss": 2.274143,
+        "ppl": 9.72
+      }
+    },
+    "triplet_009": {
+      "train": {
+        "loss": 2.207623,
+        "ppl": 9.09
+      },
+      "validation": {
+        "loss": 2.225508,
+        "ppl": 9.26
+      },
+      "test": {
+        "loss": 2.193536,
+        "ppl": 8.97
+      }
+    },
+    "triplet_010": {
+      "train": {
+        "loss": 2.268722,
+        "ppl": 9.67
+      },
+      "validation": {
+        "loss": 2.280832,
+        "ppl": 9.78
+      },
+      "test": {
+        "loss": 2.248791,
+        "ppl": 9.48
+      }
+    },
+    "triplet_016": {
+      "train": {
+        "loss": 2.182265,
+        "ppl": 8.87
+      },
+      "validation": {
+        "loss": 2.280494,
+        "ppl": 9.78
+      },
+      "test": {
+        "loss": 2.328601,
+        "ppl": 10.26
+      }
+    },
+    "triplet_017": {
+      "train": {
+        "loss": 2.328599,
+        "ppl": 10.26
+      },
+      "validation": {
+        "loss": 2.211064,
+        "ppl": 9.13
+      },
+      "test": {
+        "loss": 2.201245,
+        "ppl": 9.04
+      }
+    },
+    "triplet_018": {
+      "train": {
+        "loss": 2.256224,
+        "ppl": 9.55
+      },
+      "validation": {
+        "loss": 2.253096,
+        "ppl": 9.52
+      },
+      "test": {
+        "loss": 2.302483,
+        "ppl": 10.0
+      }
+    },
+    "triplet_019": {
+      "train": {
+        "loss": 2.336635,
+        "ppl": 10.35
+      },
+      "validation": {
+        "loss": 2.314905,
+        "ppl": 10.12
+      },
+      "test": {
+        "loss": 2.254088,
+        "ppl": 9.53
+      }
+    },
+    "triplet_020": {
+      "train": {
+        "loss": 2.246378,
+        "ppl": 9.45
+      },
+      "validation": {
+        "loss": 2.29964,
+        "ppl": 9.97
+      },
+      "test": {
+        "loss": 2.256937,
+        "ppl": 9.55
+      }
+    },
+    "triplet_026": {
+      "train": {
+        "loss": 2.183066,
+        "ppl": 8.87
+      },
+      "validation": {
+        "loss": 2.22571,
+        "ppl": 9.26
+      },
+      "test": {
+        "loss": 2.288555,
+        "ppl": 9.86
+      }
+    },
+    "triplet_027": {
+      "train": {
+        "loss": 2.221393,
+        "ppl": 9.22
+      },
+      "validation": {
+        "loss": 2.276422,
+        "ppl": 9.74
+      },
+      "test": {
+        "loss": 2.237287,
+        "ppl": 9.37
+      }
+    },
+    "triplet_028": {
+      "train": {
+        "loss": 2.194487,
+        "ppl": 8.98
+      },
+      "validation": {
+        "loss": 2.248393,
+        "ppl": 9.47
+      },
+      "test": {
+        "loss": 2.381858,
+        "ppl": 10.82
+      }
+    },
+    "triplet_029": {
+      "train": {
+        "loss": 2.26439,
+        "ppl": 9.63
+      },
+      "validation": {
+        "loss": 2.183243,
+        "ppl": 8.88
+      },
+      "test": {
+        "loss": 2.24933,
+        "ppl": 9.48
+      }
+    },
+    "triplet_030": {
+      "train": {
+        "loss": 2.292509,
+        "ppl": 9.9
+      },
+      "validation": {
+        "loss": 2.251198,
+        "ppl": 9.5
+      },
+      "test": {
+        "loss": 2.231579,
+        "ppl": 9.31
+      }
+    },
+    "triplet_036": {
+      "train": {
+        "loss": 2.565484,
+        "ppl": 13.01
+      },
+      "validation": {
+        "loss": 2.695193,
+        "ppl": 14.81
+      },
+      "test": {
+        "loss": 2.611033,
+        "ppl": 13.61
+      }
+    },
+    "triplet_037": {
+      "train": {
+        "loss": 2.539596,
+        "ppl": 12.67
+      },
+      "validation": {
+        "loss": 2.551963,
+        "ppl": 12.83
+      },
+      "test": {
+        "loss": 2.636057,
+        "ppl": 13.96
+      }
+    },
+    "triplet_038": {
+      "train": {
+        "loss": 2.537989,
+        "ppl": 12.65
+      },
+      "validation": {
+        "loss": 2.603559,
+        "ppl": 13.51
+      },
+      "test": {
+        "loss": 2.626828,
+        "ppl": 13.83
+      }
+    },
+    "triplet_039": {
+      "train": {
+        "loss": 2.645326,
+        "ppl": 14.09
+      },
+      "validation": {
+        "loss": 2.652088,
+        "ppl": 14.18
+      },
+      "test": {
+        "loss": 2.549103,
+        "ppl": 12.8
+      }
+    },
+    "triplet_040": {
+      "train": {
+        "loss": 2.574117,
+        "ppl": 13.12
+      },
+      "validation": {
+        "loss": 2.514703,
+        "ppl": 12.36
+      },
+      "test": {
+        "loss": 2.545995,
+        "ppl": 12.76
+      }
+    },
+    "triplet_046": {
+      "train": {
+        "loss": 2.153429,
+        "ppl": 8.61
+      },
+      "validation": {
+        "loss": 2.231709,
+        "ppl": 9.32
+      },
+      "test": {
+        "loss": 2.134896,
+        "ppl": 8.46
+      }
+    },
+    "triplet_047": {
+      "train": {
+        "loss": 2.201082,
+        "ppl": 9.03
+      },
+      "validation": {
+        "loss": 2.187455,
+        "ppl": 8.91
+      },
+      "test": {
+        "loss": 2.13553,
+        "ppl": 8.46
+      }
+    },
+    "triplet_048": {
+      "train": {
+        "loss": 2.204806,
+        "ppl": 9.07
+      },
+      "validation": {
+        "loss": 2.149994,
+        "ppl": 8.58
+      },
+      "test": {
+        "loss": 2.165747,
+        "ppl": 8.72
+      }
+    },
+    "triplet_049": {
+      "train": {
+        "loss": 2.244066,
+        "ppl": 9.43
+      },
+      "validation": {
+        "loss": 2.144285,
+        "ppl": 8.54
+      },
+      "test": {
+        "loss": 2.174592,
+        "ppl": 8.8
+      }
+    },
+    "triplet_050": {
+      "train": {
+        "loss": 2.200776,
+        "ppl": 9.03
+      },
+      "validation": {
+        "loss": 2.226732,
+        "ppl": 9.27
+      },
+      "test": {
+        "loss": 2.121842,
+        "ppl": 8.35
+      }
+    },
+    "triplet_056": {
+      "train": {
+        "loss": 2.373015,
+        "ppl": 10.73
+      },
+      "validation": {
+        "loss": 2.304318,
+        "ppl": 10.02
+      },
+      "test": {
+        "loss": 2.467746,
+        "ppl": 11.8
+      }
+    },
+    "triplet_057": {
+      "train": {
+        "loss": 2.407154,
+        "ppl": 11.1
+      },
+      "validation": {
+        "loss": 2.398456,
+        "ppl": 11.01
+      },
+      "test": {
+        "loss": 2.459812,
+        "ppl": 11.7
+      }
+    },
+    "triplet_058": {
+      "train": {
+        "loss": 2.394931,
+        "ppl": 10.97
+      },
+      "validation": {
+        "loss": 2.467155,
+        "ppl": 11.79
+      },
+      "test": {
+        "loss": 2.444954,
+        "ppl": 11.53
+      }
+    },
+    "triplet_059": {
+      "train": {
+        "loss": 2.44176,
+        "ppl": 11.49
+      },
+      "validation": {
+        "loss": 2.555146,
+        "ppl": 12.87
+      },
+      "test": {
+        "loss": 2.461419,
+        "ppl": 11.72
+      }
+    },
+    "triplet_060": {
+      "train": {
+        "loss": 2.414878,
+        "ppl": 11.19
+      },
+      "validation": {
+        "loss": 2.407112,
+        "ppl": 11.1
+      },
+      "test": {
+        "loss": 2.29569,
+        "ppl": 9.93
+      }
+    },
+    "triplet_066": {
+      "train": {
+        "loss": 2.375176,
+        "ppl": 10.75
+      },
+      "validation": {
+        "loss": 2.406368,
+        "ppl": 11.09
+      },
+      "test": {
+        "loss": 2.461048,
+        "ppl": 11.72
+      }
+    },
+    "triplet_067": {
+      "train": {
+        "loss": 2.584594,
+        "ppl": 13.26
+      },
+      "validation": {
+        "loss": 2.440732,
+        "ppl": 11.48
+      },
+      "test": {
+        "loss": 2.49994,
+        "ppl": 12.18
+      }
+    },
+    "triplet_068": {
+      "train": {
+        "loss": 2.471811,
+        "ppl": 11.84
+      },
+      "validation": {
+        "loss": 2.380276,
+        "ppl": 10.81
+      },
+      "test": {
+        "loss": 2.482589,
+        "ppl": 11.97
+      }
+    },
+    "triplet_069": {
+      "train": {
+        "loss": 2.530905,
+        "ppl": 12.56
+      },
+      "validation": {
+        "loss": 2.376334,
+        "ppl": 10.77
+      },
+      "test": {
+        "loss": 2.456381,
+        "ppl": 11.66
+      }
+    },
+    "triplet_070": {
+      "train": {
+        "loss": 2.411153,
+        "ppl": 11.15
+      },
+      "validation": {
+        "loss": 2.514943,
+        "ppl": 12.37
+      },
+      "test": {
+        "loss": 2.286692,
+        "ppl": 9.84
+      }
+    },
+    "triplet_076": {
+      "train": {
+        "loss": 2.399424,
+        "ppl": 11.02
+      },
+      "validation": {
+        "loss": 2.245833,
+        "ppl": 9.45
+      },
+      "test": {
+        "loss": 2.26736,
+        "ppl": 9.65
+      }
+    },
+    "triplet_077": {
+      "train": {
+        "loss": 2.350202,
+        "ppl": 10.49
+      },
+      "validation": {
+        "loss": 2.288862,
+        "ppl": 9.86
+      },
+      "test": {
+        "loss": 2.18149,
+        "ppl": 8.86
+      }
+    },
+    "triplet_078": {
+      "train": {
+        "loss": 2.346459,
+        "ppl": 10.45
+      },
+      "validation": {
+        "loss": 2.316829,
+        "ppl": 10.14
+      },
+      "test": {
+        "loss": 2.244667,
+        "ppl": 9.44
+      }
+    },
+    "triplet_079": {
+      "train": {
+        "loss": 2.235807,
+        "ppl": 9.35
+      },
+      "validation": {
+        "loss": 2.245937,
+        "ppl": 9.45
+      },
+      "test": {
+        "loss": 2.323389,
+        "ppl": 10.21
+      }
+    },
+    "triplet_080": {
+      "train": {
+        "loss": 2.293078,
+        "ppl": 9.91
+      },
+      "validation": {
+        "loss": 2.30402,
+        "ppl": 10.01
+      },
+      "test": {
+        "loss": 2.317119,
+        "ppl": 10.15
+      }
+    },
+    "triplet_086": {
+      "train": {
+        "loss": 2.398649,
+        "ppl": 11.01
+      },
+      "validation": {
+        "loss": 2.368835,
+        "ppl": 10.68
+      },
+      "test": {
+        "loss": 2.463571,
+        "ppl": 11.75
+      }
+    },
+    "triplet_087": {
+      "train": {
+        "loss": 2.355585,
+        "ppl": 10.54
+      },
+      "validation": {
+        "loss": 2.432919,
+        "ppl": 11.39
+      },
+      "test": {
+        "loss": 2.406017,
+        "ppl": 11.09
+      }
+    },
+    "triplet_088": {
+      "train": {
+        "loss": 2.368227,
+        "ppl": 10.68
+      },
+      "validation": {
+        "loss": 2.243789,
+        "ppl": 9.43
+      },
+      "test": {
+        "loss": 2.296222,
+        "ppl": 9.94
+      }
+    },
+    "triplet_089": {
+      "train": {
+        "loss": 2.286378,
+        "ppl": 9.84
+      },
+      "validation": {
+        "loss": 2.35415,
+        "ppl": 10.53
+      },
+      "test": {
+        "loss": 2.384108,
+        "ppl": 10.85
+      }
+    },
+    "triplet_090": {
+      "train": {
+        "loss": 2.383016,
+        "ppl": 10.84
+      },
+      "validation": {
+        "loss": 2.419798,
+        "ppl": 11.24
+      },
+      "test": {
+        "loss": 2.320892,
+        "ppl": 10.18
+      }
+    },
+    "triplet_096": {
+      "train": {
+        "loss": 2.204246,
+        "ppl": 9.06
+      },
+      "validation": {
+        "loss": 2.203196,
+        "ppl": 9.05
+      },
+      "test": {
+        "loss": 2.227765,
+        "ppl": 9.28
+      }
+    },
+    "triplet_097": {
+      "train": {
+        "loss": 2.222668,
+        "ppl": 9.23
+      },
+      "validation": {
+        "loss": 2.266334,
+        "ppl": 9.64
+      },
+      "test": {
+        "loss": 2.180481,
+        "ppl": 8.85
+      }
+    },
+    "triplet_098": {
+      "train": {
+        "loss": 2.345791,
+        "ppl": 10.44
+      },
+      "validation": {
+        "loss": 2.234345,
+        "ppl": 9.34
+      },
+      "test": {
+        "loss": 2.227044,
+        "ppl": 9.27
+      }
+    },
+    "triplet_099": {
+      "train": {
+        "loss": 2.164259,
+        "ppl": 8.71
+      },
+      "validation": {
+        "loss": 2.361532,
+        "ppl": 10.61
+      },
+      "test": {
+        "loss": 2.155972,
+        "ppl": 8.64
+      }
+    },
+    "triplet_100": {
+      "train": {
+        "loss": 2.333648,
+        "ppl": 10.32
+      },
+      "validation": {
+        "loss": 2.267382,
+        "ppl": 9.65
+      },
+      "test": {
+        "loss": 2.345334,
+        "ppl": 10.44
+      }
+    }
+  }
+}
