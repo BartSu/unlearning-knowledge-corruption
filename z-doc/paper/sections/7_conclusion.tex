@@ -1,0 +1,10 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+We characterised LLM unlearning side-effects on Llama-3.1-8B-Instruct across $n{=}100$ forget sets and $1.5$M per-sample evaluations, and re-cast the resulting benchmarking burden as a forget-set audit problem.
+
+\paragraph{Findings.} (i) Side-effects decay monotonically across three semantic layers ($\Lone{=}1.96\times$, $\Ltwo{=}1.32\times$, $\Lthree{=}1.19\times$) but $\Lthree$ never reaches zero --- $73.8\%$ of cross-topic samples are still corrupted. (ii) Under fixed algorithm and hyperparameters, $\Lone$ varies $1.59\times$ between the mildest and worst forget set, identifying $\Df$ itself as a substantial source of variation. (iii) A Ridge regressor on $12$-dim forget-set geometry predicts the layer profile with leave-one-cluster-out Spearman $\rho$ of $0.53/0.84/0.49$, all $95\%$ CIs strictly above zero.
+
+\paragraph{Implication.} Unlearning evaluation can adopt a \emph{screen-then-run} workflow: rank candidate forget sets by audit score, run real unlearning only on the top-$k$. At $N{=}100$, $k{=}10$, this trades $7$ GPU-hours of cross-PPL for seconds of CPU --- without renouncing the ground-truth check on whatever the auditor flags.
+
+\paragraph{Future work.} Cross-unlearner transfer (NPO, GradDiff, RMU), cross-model audit (Mistral-7B, Qwen), enriching the descriptor with mutual-reachability and signed projection coverage, scaling to $n{=}500$--$1000$, and parallel QA-accuracy metrics for non-PPL utility. We release the cross-PPL matrix, audit features, and pre-screen code to enable these extensions.

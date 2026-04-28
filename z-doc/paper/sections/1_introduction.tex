@@ -1,0 +1,30 @@
+\section{Introduction}
+\label{sec:intro}
+
+Copyright disputes, privacy regulation, and the discovery of toxic or copyrighted material in pretraining corpora have made \emph{LLM unlearning} --- selectively removing specific data $\Df$ from a trained model --- a practical requirement \citep{maini2024tofu, shi2024muse, dorna2025openunlearning}. Unfortunately, unlearning is not a scalpel. Removing $\Df$ simultaneously degrades capabilities and content that have nothing to do with $\Df$ \citep{ko2025probing}. Recent work shows that benchmark-level utility metrics often hide such collateral damage: nearby and latent knowledge is silently corrupted even when the forget set itself is successfully removed.
+
+This poses two open problems. \textbf{(P1) Mapping the damage.} How far from $\Df$ does unlearning hurt, and does the damage actually decay with semantic distance, or is it diffuse? Existing studies typically pick a small handful of forget sets and report aggregate utility, leaving the \emph{geometry of corruption} unmeasured. \textbf{(P2) Choosing forget sets cheaply.} Unlearning hyperparameters can be searched, but \emph{the choice of $\Df$ itself} is rarely revisited because measuring its side-effect requires running unlearning followed by a cross-evaluation sweep. With $N$ candidate forget sets, a faithful comparison costs $N$ unlearn runs and an $N\times N$ cross-PPL matrix --- already several GPU-hours at $N{=}100$ on Llama-3.1-8B.
+
+\paragraph{Our setup.} We unlearn $n{=}100$ forget sets sampled from $10$ HDBSCAN clusters of WikiText-103 ($10$ triplets per cluster, each triplet a (forget, retain, probe) triple of $50$ texts). We unlearn Llama-3.1-8B-Instruct with GradAscent under TOFU-aligned hyperparameters \citep{maini2024tofu, dorna2025openunlearning} and evaluate every checkpoint on every triplet, yielding a $100\times100$ cross-PPL matrix and $1.5\!\times\!10^{6}$ per-sample PPL ratios.
+
+\paragraph{Three-layer corruption (Sec.~\ref{sec:three-layer}).} On this matrix we read off three semantic layers from the pair $(m,e)$ of unlearn-cluster $m$ and eval-cluster $e$:
+\begin{itemize}
+    \setlength\itemsep{0.2em}
+    \item $\Lone$ \textbf{forget}: diagonal $m{=}e$, train split --- the unlearned samples themselves.
+    \item $\Ltwo$ \textbf{locality}: diagonal $m{=}e$, validation/test --- unseen same-cluster neighbours.
+    \item $\Lthree$ \textbf{spillover}: off-diagonal $m{\neq}e$ --- innocent bystanders in unrelated topics.
+\end{itemize}
+Headline geometric means of $r{=}\PPL_{\text{unlearned}}/\PPL_{\text{base}}$ are $\Lone{=}1.96\times$, $\Ltwo{=}1.32\times$, $\Lthree{=}1.19\times$ (Fig.~\ref{fig:three-layer-decay}). Decay is strict, but $\Lthree{>}1$ and $73.8\%$ of cross-topic samples still see elevated PPL, so spillover is neither zero nor a tail event. Across the $100$ forget sets, $\Lone$ ranges from $1.54\times$ to $2.44\times$ --- a $1.59\times$ spread between the mildest and worst forget set under the same algorithm and hyperparameters. The choice of $\Df$ is itself a substantial source of harm variation.
+
+\paragraph{Forget-set audit (Sec.~\ref{sec:audit}).} Inspired by \citet{dang2024curious}, who predict adversarial robustness from \emph{training-data} features and skip $30\!\times\!\text{--}\!193\times$ of model-side evaluation, we recast benchmarking as a \emph{forget-set audit} problem: given only $\Df$ (no unlearning, no evaluation text), predict its three-layer corruption profile. A $12$-dim intrinsic geometric descriptor of $\Df$ (variance, pairwise similarity, centroid norm, effective rank, isotropy, $\ldots$) fed to a Ridge regressor reaches Spearman $\rho{=}0.53/0.84/0.49$ on $\Lone/\Ltwo/\Lthree$ under leave-one-cluster-out cross-validation; all three $95\%$ bootstrap CIs exclude zero. The auditor runs in seconds versus several GPU-hours per candidate, enabling a screen-then-run workflow.
+
+\paragraph{Contributions.}
+\begin{enumerate}
+    \setlength\itemsep{0.2em}
+    \item A three-layer characterisation of unlearning side-effects (forget / locality / spillover), grounded in a $100\times100$ cross-PPL matrix. We show monotone decay with semantic distance \emph{but $\Lthree{>}1$ on $73.8\%$ of cross-topic samples}.
+    \item Quantitative evidence that side-effect magnitude is a property of the forget set itself: under fixed algorithm and hyperparameters, $\Lone$ varies $1.59\times$ across $100$ forget sets.
+    \item A \emph{forget-set audit} formulation: $12$-dim forget-set geometry alone produces rank-significant predictions of $\Lone/\Ltwo/\Lthree$, with $\Ltwo$ reaching $\rho{=}0.84$ and $R^2{=}0.71$. We position the auditor as a cheap pre-screen (\emph{not} a replacement for the actual unlearn run).
+    \item Public release of the cross-PPL matrix, audit features, and pre-screen code, plugging into the OpenUnlearning framework \citep{dorna2025openunlearning}.
+\end{enumerate}
+
+\paragraph{Roadmap.} Sec.~\ref{sec:related} surveys data-first prediction and unlearning side-effect probing. Sec.~\ref{sec:setup} formalises the triplet schema and cross-PPL matrix. Sec.~\ref{sec:three-layer} reports the three-layer corruption finding. Sec.~\ref{sec:audit} introduces the audit problem and the geometric predictor. Sec.~\ref{sec:discussion}--\ref{sec:conclusion} discuss limitations and outlook.

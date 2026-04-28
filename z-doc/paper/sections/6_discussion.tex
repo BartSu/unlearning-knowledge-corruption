@@ -1,0 +1,36 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{What the geometric features actually capture}
+\label{sec:why-it-works}
+
+A natural question is why $12$ scalar features computed in milliseconds carry enough signal to rank the layer-2 corruption with $\rho{=}0.84$. We hypothesise three mechanisms, each consistent with the per-cluster pattern in Fig.~\ref{fig:per-forget-profile}:
+\begin{itemize}
+    \setlength\itemsep{0.15em}
+    \item \textbf{Concentration $\Rightarrow$ stronger locality damage}. Forget sets with low spread and high pairwise similarity (e.g.\ the ``storm'' cluster) sit on a tight manifold; the gradient signal from GradAscent is therefore sharply directional, and validation/test neighbours along the same direction are dragged with it. This predicts large $\Ltwo$, which we observe.
+    \item \textbf{Effective rank $\Rightarrow$ spillover footprint}. Low-effective-rank $\Df$ lives near a low-dim subspace; updating the model along that subspace bleeds across topic clusters that share the same dominant directions, producing $\Lthree{>}1$. The (negative) correlation between subspace coverage and $\Lthree$ ($\rho{=}{-}0.48$) supports this view.
+    \item \textbf{Centroid norm $\Rightarrow$ baseline PPL coupling}. Forget sets far from the embedding origin tend to have higher base PPL, which inflates the $r{=}\PPL_{\text{unlearned}}/\PPL_{\text{base}}$ ratio's denominator unevenly across layers; capturing this with \texttt{centroid\_norm} corrects for the floor.
+\end{itemize}
+A causal study --- e.g.\ deliberately constructing $\Df$ with prescribed isotropy and effective rank --- is left to future work; the present paper establishes the predictive correlation under naturally occurring HDBSCAN clusters.
+
+\subsection{When does the auditor break?}
+\label{sec:failure}
+
+The audit is most reliable for $\Ltwo$ and least reliable for $\Lthree$ in absolute terms (MAE $0.020$ vs.\ baseline $0.022$ --- only a $9\%$ improvement, even though $\rho{=}0.49$ excludes zero). Two reasons: (i) $\Lthree$ has a very narrow dynamic range ($1.13\times$ between worst and mildest cluster), so absolute prediction is intrinsically hard; and (ii) cross-cluster spillover plausibly depends on \emph{evaluation-side} geometry (where the neighbours of $\Df$ are in the broader embedding space), which the forget-set-only descriptor cannot see. Our top-1 / top-3 cluster identification is also imperfect ($0/3$ exact top-1 match in the held-out fold), which is why we frame the auditor as a screen rather than a precise ranker.
+
+\subsection{Limitations}
+\label{sec:limitations}
+
+We acknowledge four ``singles'' that the present study does not control for:
+\begin{enumerate}
+    \setlength\itemsep{0.15em}
+    \item \textbf{Single base model} (Llama-3.1-8B-Instruct). Geometry-to-corruption mapping may be model-specific; verifying on Mistral-7B and a Qwen variant is high-priority next work.
+    \item \textbf{Single unlearner} (GradAscent). NPO and GradDiff have different gradient geometry and may shift the layer ratios; cross-unlearner audit transfer is the natural extension.
+    \item \textbf{$n{=}100$}. All three CIs exclude zero, but $\Lthree$ remains the weakest layer; scaling to $n{=}500$--$1000$ is feasible in one extra GPU-day.
+    \item \textbf{Single metric}: PPL ratio. PPL captures token-level corruption but not task-level utility (QA accuracy). Parallel QA-based evaluation is in progress as a complementary axis.
+\end{enumerate}
+
+\subsection{Ethical and Practical Considerations}
+\label{sec:ethics}
+
+A pre-screen that ranks forget sets by side-effect could in principle be misused to \emph{target} forget sets that maximise damage (e.g.\ to degrade a competitor's model via a poisoned removal request). We see two mitigations: (i) the auditor itself is not a generative tool --- it scores, not produces, candidates; (ii) the failure mode is bounded by the underlying unlearning algorithm, which already has well-known damage profiles independent of our score. We recommend that practical deployments couple the auditor with a downstream gate (the actual unlearn + cross-PPL), as in the screen-then-run workflow of Sec.~\ref{sec:positioning}.

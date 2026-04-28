@@ -1,0 +1,84 @@
+\section{Three-Layer Corruption}
+\label{sec:three-layer}
+
+This section establishes the central empirical observation: unlearning side-effects decay across three semantic layers, but $\Lthree$ never reaches zero, and the layer profile depends substantially on which $\Df$ was chosen.
+
+\subsection{Headline Numbers}
+\label{sec:headline}
+
+Table~\ref{tab:headline} reports geometric means of the per-sample PPL ratio $r$ across the $1.5$M evaluations.
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lccc@{}}
+    \toprule
+                                                   & $\Lone$ & $\Ltwo$ & $\Lthree$ \\
+    \midrule
+    Samples                                        & $5{,}000$ & $10{,}000$ & $495{,}000$ \\
+    Geo-mean $r$                                   & \textbf{$1.96\times$} & \textbf{$1.32\times$} & \textbf{$1.19\times$} \\
+    \% samples with $r{>}1.1$                      & $100.0$ & $90.8$ & $73.8$ \\
+    \% samples with $r{>}2.0$                      & $42.0$  & $2.4$  & $0.8$ \\
+    \bottomrule
+\end{tabular}
+\caption{Three-layer corruption headline ($n{=}100$ forget sets, $1.5$M per-sample ratios). Decay is strict ($\Lone{>}\Ltwo{>}\Lthree$), but $\Lthree{>}1$ on $73.8\%$ of cross-topic samples.}
+\label{tab:headline}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\columnwidth]{fig_three_layer_decay.pdf}
+\caption{\textbf{Three-layer corruption decay.} Left: geo-mean PPL ratio $r$ falls from $\Lone{=}1.96\times$ to $\Lthree{=}1.19\times$. Right: fraction of samples with $r{>}1.1$ ($100\%/90.8\%/73.8\%$). $\Lthree$ is non-zero in both senses.}
+\label{fig:three-layer-decay}
+\end{figure}
+
+Two observations stand out.
+
+\textbf{(C1) Strict monotone decay.} $\Lone{>}\Ltwo{>}\Lthree$ holds globally and within each cluster (Sec.~\ref{sec:invariants}); the layer ordering is not an artefact of aggregation.
+
+\textbf{(C2) $\Lthree$ does not vanish.} Cross-cluster samples that are by construction unrelated to $\Df$ are corrupted on $73.8\%$ of measurements, with geo-mean $1.19\times$. Spillover is the rule, not a tail event.
+
+\subsection{Sanity Checks}
+\label{sec:invariants}
+
+We verify four invariants over the $1.5$M-row long table to rule out aggregation artefacts:
+\begin{itemize}
+    \setlength\itemsep{0.15em}
+    \item \textbf{(I1) $\Lone$ geo-mean $>1$}: every cluster's $\Lone$ ratio is $>1$ (mildest cluster $1.54\times$).
+    \item \textbf{(I2) Layer monotonicity}: $\Lone(c){>}\Ltwo(c){>}\Lthree(c)$ holds for all $10$ clusters.
+    \item \textbf{(I3) Base-PPL invariance}: base-model PPL on a fixed text is identical across layers (sanity that the base reference is not contaminated).
+    \item \textbf{(I4) $\Lone$ saturation}: $\geq 50\%$ of $\Lone$ samples have $r{>}1.1$ (we observe $100\%$).
+\end{itemize}
+
+\subsection{Per-Forget-Set Variance}
+\label{sec:per-forget}
+
+The same algorithm and hyperparameters applied to different forget sets produce noticeably different damage profiles. Table~\ref{tab:perforget} contrasts the mildest and worst forget set among $100$.
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lccc@{}}
+    \toprule
+                                                   & $\Lone$ & $\Ltwo$ & $\Lthree$ \\
+    \midrule
+    Mildest triplet (\texttt{029})                 & $1.54$ & $1.15$ & $1.12$ \\
+    Worst triplet (\texttt{073}, ``storm'')        & $\mathbf{2.44}$ & $\mathbf{1.73}$ & $\mathbf{1.26}$ \\
+    \midrule
+    Spread (max/min, $n{=}100$)                    & $\mathbf{1.59\times}$ & $1.50\times$ & $1.13\times$ \\
+    \bottomrule
+\end{tabular}
+\caption{Forget-set-induced variation. $\Lone$ varies by $1.59\times$ between the mildest and worst $\Df$ under fixed algorithm/hyperparameters.}
+\label{tab:perforget}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\columnwidth]{fig_per_forget_profile.pdf}
+\caption{\textbf{Per-forget-set corruption profile.} Triplets sorted by $\Lone$. The ``storm'' cluster concentrates the worst triplets across all three layers; the spread is large enough to motivate a pre-screen.}
+\label{fig:per-forget-profile}
+\end{figure}
+
+\textbf{(C3) Side-effect is a property of $\Df$.} Under identical optimisation, switching $\Df$ changes $\Lone$ by $1.59\times$ end-to-end (log-scale spread $\approx 1.7$). On a one-page reading: the question \emph{``how much will unlearning hurt?''} has no single answer for a given algorithm; it depends on which $\Df$ is unlearned. This is the empirical wedge that motivates the audit problem in Sec.~\ref{sec:audit}.
