@@ -19,8 +19,8 @@ import pandas as pd
 from scipy.stats import spearmanr
 
 ROOT = Path(__file__).resolve().parents[2]
-AUDIT = ROOT / "4.regression-predictor" / "audit"
-CROSS_JSON = ROOT / "2.extract-ppl" / "wikitext_cross_metrics_detail.json"
+AUDIT = ROOT / "5.audit" / "regression-predictor" / "audit"
+CROSS_JSON = ROOT / "3.inference" / "extract-ppl" / "wikitext_cross_metrics_detail.json"
 MANIFEST = ROOT / "1.data-preparation" / "data" / "wikitext_hdbscan_triplets" / "run_manifest.json"
 OUT = Path(__file__).resolve().parent
 
