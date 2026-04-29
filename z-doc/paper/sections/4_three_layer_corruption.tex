@@ -39,18 +39,6 @@ Two observations stand out.
 
 \textbf{(C2) $\Lthree$ does not vanish.} Cross-cluster samples that are by construction unrelated to $\Df$ are corrupted on $73.8\%$ of measurements, with geo-mean $1.19\times$. Spillover is the rule, not a tail event.
 
-\subsection{Sanity Checks}
-\label{sec:invariants}
-
-We verify four invariants over the $1.5$M-row long table to rule out aggregation artefacts:
-\begin{itemize}
-    \setlength\itemsep{0.15em}
-    \item \textbf{(I1) $\Lone$ geo-mean $>1$}: every cluster's $\Lone$ ratio is $>1$ (mildest cluster $1.54\times$).
-    \item \textbf{(I2) Layer monotonicity}: $\Lone(c){>}\Ltwo(c){>}\Lthree(c)$ holds for all $10$ clusters.
-    \item \textbf{(I3) Base-PPL invariance}: base-model PPL on a fixed text is identical across layers (sanity that the base reference is not contaminated).
-    \item \textbf{(I4) $\Lone$ saturation}: $\geq 50\%$ of $\Lone$ samples have $r{>}1.1$ (we observe $100\%$).
-\end{itemize}
-
 \subsection{Per-Forget-Set Variance}
 \label{sec:per-forget}
 
@@ -77,7 +65,7 @@ The same algorithm and hyperparameters applied to different forget sets produce 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.95\columnwidth]{fig_per_forget_profile.pdf}
-\caption{\textbf{Per-forget-set corruption profile.} Triplets sorted by $\Lone$. The ``storm'' cluster concentrates the worst triplets across all three layers; the spread is large enough to motivate a pre-screen.}
+\caption{\textbf{Per-forget-set variance ($n{=}100$).} Box + jitter of geo-mean $r$ for each layer; one dot per forget set. Spread $\max/\min$ reaches $1.59\times$ on $\Lone$, $1.50\times$ on $\Ltwo$, $1.13\times$ on $\Lthree$. \texttt{triplet\_073} (``storm'') is the worst on $\Lone$ and $\Ltwo$ but not on $\Lthree$ (where \texttt{triplet\_072} is the maximum, $1.26\times$); \texttt{triplet\_029} is the $\Lone$ minimum. Distribution shape is markedly tighter as the layer recedes from $\Df$.}
 \label{fig:per-forget-profile}
 \end{figure}
 

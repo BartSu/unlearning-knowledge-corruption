@@ -14,7 +14,7 @@ import pandas as pd
 from scipy.stats import spearmanr
 
 ROOT = Path(__file__).resolve().parents[2]
-AUDIT = ROOT / "4.regression-predictor" / "audit"
+AUDIT = ROOT / "5.audit" / "regression-predictor" / "audit"
 OUT = Path(__file__).resolve().parent
 
 CLUSTER = {
@@ -76,30 +76,72 @@ def fig_three_layer_decay() -> Path:
 
 
 def fig_per_forget_profile() -> Path:
+    """Per-forget-set distribution across n=100 forget sets, three layers.
+
+    Box + jitter overlay (one box per layer), storm (#073) and mildest (#029)
+    highlighted. Spread max/min annotated above each box to mirror Table 2.
+    """
     df = pd.read_csv(AUDIT / "part1_corruption_profile.csv")
-    df["cluster"] = df["forget_cluster"].map(CLUSTER)
-    df = df.sort_values("geo_L1_forget").reset_index(drop=True)
-    x = np.arange(len(df))
-    w = 0.27
 
-    fig, ax = plt.subplots(figsize=(7.0, 3.8))
-    ax.bar(x - w, df["geo_L1_forget"], w, color="#b2182b", label="L1 forget")
-    ax.bar(x,     df["geo_L2_locality"], w, color="#ef8a62", label="L2 locality")
-    ax.bar(x + w, df["geo_L3_spillover"], w, color="#fddbc7", edgecolor="black", label="L3 spillover")
-    ax.axhline(1.0, color="gray", linestyle="--", linewidth=0.8)
-    ax.set_xticks(x)
-    ax.set_xticklabels(df["cluster"], rotation=30, ha="right")
-    ax.set_ylabel("geo-mean PPL ratio")
-    ax.set_title("Per–forget-set corruption profile (same unlearner, 10 forget sets)")
-    ax.legend(loc="upper left", frameon=False)
+    layers = [
+        ("geo_L1_forget", r"$\mathcal{L}_1$ forget", "#b2182b"),
+        ("geo_L2_locality", r"$\mathcal{L}_2$ locality", "#ef8a62"),
+        ("geo_L3_spillover", r"$\mathcal{L}_3$ spillover", "#4393c3"),
+    ]
 
-    storm_idx = int(df.index[df["cluster"] == "storm"][0])
-    ax.annotate("worst = storm", xy=(storm_idx, df.loc[storm_idx, "geo_L1_forget"]),
-                xytext=(storm_idx - 2.2, df["geo_L1_forget"].max() * 1.03),
-                arrowprops=dict(arrowstyle="->", color="#b2182b"),
-                color="#b2182b", fontsize=9)
+    fig, ax = plt.subplots(figsize=(6.0, 3.6))
+    rng = np.random.default_rng(0)
+    box_data = [df[col].values for col, _, _ in layers]
+
+    bp = ax.boxplot(
+        box_data, positions=[0, 1, 2], widths=0.55, patch_artist=True,
+        showfliers=False, medianprops=dict(color="black", linewidth=1.4),
+        whiskerprops=dict(color="#444"), capprops=dict(color="#444"),
+    )
+    for patch, (_, _, color) in zip(bp["boxes"], layers):
+        patch.set_facecolor(color)
+        patch.set_alpha(0.35)
+        patch.set_edgecolor("#222")
+
+    storm_id, mild_id = "triplet_073", "triplet_029"
+    for i, (col, _, color) in enumerate(layers):
+        y = df[col].values
+        x = i + (rng.random(len(y)) - 0.5) * 0.35
+        ax.scatter(x, y, s=14, color=color, edgecolor="black",
+                   linewidth=0.3, alpha=0.55, zorder=2)
+
+        # Highlight storm + mildest with distinct markers
+        is_storm = (df["forget_cluster"] == storm_id).values
+        is_mild = (df["forget_cluster"] == mild_id).values
+        if is_storm.any():
+            ax.scatter(x[is_storm], y[is_storm], s=110, marker="*",
+                       color="#b2182b", edgecolor="black", linewidth=0.8,
+                       zorder=4, label="triplet_073 (storm)" if i == 0 else None)
+        if is_mild.any():
+            ax.scatter(x[is_mild], y[is_mild], s=80, marker="D",
+                       color="#1a9850", edgecolor="black", linewidth=0.8,
+                       zorder=4, label="triplet_029 (mildest)" if i == 0 else None)
+
+        # Spread annotation above each box
+        ymax, ymin = y.max(), y.min()
+        spread = ymax / ymin
+        ax.annotate(f"spread\n{spread:.2f}×",
+                    xy=(i, ymax), xytext=(i, ymax + 0.08),
+                    ha="center", va="bottom", fontsize=8.5,
+                    color="#222")
+
+    ax.axhline(1.0, color="gray", linestyle="--", linewidth=0.7, zorder=1)
+    ax.set_xticks([0, 1, 2])
+    ax.set_xticklabels([lbl for _, lbl, _ in layers])
+    ax.set_ylabel(r"geo-mean PPL ratio  $r$", fontsize=10)
+    ax.set_ylim(0.9, max(df[c].max() for c, _, _ in layers) * 1.15)
+    ax.set_title(
+        f"Per-forget-set variance ($n{{=}}{len(df)}$ forget sets)",
+        fontsize=11,
+    )
+    ax.legend(loc="upper right", frameon=False, fontsize=8.5)
     out = OUT / "fig_per_forget_profile.pdf"
-    fig.savefig(out)
+    fig.savefig(out, bbox_inches="tight")
     plt.close(fig)
     return out
 
