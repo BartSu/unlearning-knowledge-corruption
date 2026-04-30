@@ -2,7 +2,7 @@
   "schema_version": 2,
   "evaluation_scope": "per_triplet",
   "model": "meta-llama/Llama-3.1-8B-Instruct",
-  "data_dir": "/media/volume/llm/unlearning/1.data-preparation/data/wikitext_hdbscan_triplets",
+  "data_dir": "/media/volume/llm/unlearning-knowledge-corruption/1.data-preparation/data/wikitext_hdbscan_triplets",
   "text_field": "text",
   "triplets": {
     "triplet_001": {

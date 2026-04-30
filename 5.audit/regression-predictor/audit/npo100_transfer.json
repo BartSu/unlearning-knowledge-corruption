@@ -1,0 +1,67 @@
+{
+  "n_train_GradAscent": 100,
+  "n_test_NPO": 100,
+  "layers": {
+    "L1_forget": {
+      "r2": -20.571819486843022,
+      "mae": 0.29369420992611084,
+      "spearman_rho": 0.7126432643264325
+    },
+    "L2_locality": {
+      "r2": -7.246839875503198,
+      "mae": 0.1810203187272764,
+      "spearman_rho": 0.8884008400840082
+    },
+    "L3_spillover": {
+      "r2": -33.6453728631639,
+      "mae": 0.08380866343762175,
+      "spearman_rho": 0.663018301830183
+    }
+  },
+  "topk_3": {
+    "L1_forget": {
+      "k": 3,
+      "hits": 1,
+      "recall": 0.3333333333333333,
+      "random_recall": 0.03,
+      "lift_over_random": 11.11111111111111
+    },
+    "L2_locality": {
+      "k": 3,
+      "hits": 2,
+      "recall": 0.6666666666666666,
+      "random_recall": 0.03,
+      "lift_over_random": 22.22222222222222
+    },
+    "L3_spillover": {
+      "k": 3,
+      "hits": 2,
+      "recall": 0.6666666666666666,
+      "random_recall": 0.03,
+      "lift_over_random": 22.22222222222222
+    }
+  },
+  "topk_10": {
+    "L1_forget": {
+      "k": 10,
+      "hits": 4,
+      "recall": 0.4,
+      "random_recall": 0.1,
+      "lift_over_random": 4.0
+    },
+    "L2_locality": {
+      "k": 10,
+      "hits": 9,
+      "recall": 0.9,
+      "random_recall": 0.1,
+      "lift_over_random": 9.0
+    },
+    "L3_spillover": {
+      "k": 10,
+      "hits": 4,
+      "recall": 0.4,
+      "random_recall": 0.1,
+      "lift_over_random": 4.0
+    }
+  }
+}

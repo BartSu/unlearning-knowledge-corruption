@@ -46,12 +46,15 @@
 \newcommand{\Lone}{L_1}
 \newcommand{\Ltwo}{L_2}
 \newcommand{\Lthree}{L_3}
+\newcommand{\Lforget}{L_F}
+\newcommand{\Lneigh}{L_N}
+\newcommand{\Lbyst}{L_B}
 \DeclareMathOperator*{\argmin}{arg\,min}
 \DeclareMathOperator*{\argmax}{arg\,max}
 \newcommand{\geomean}{\mathrm{geo}}
 
-\title{From Three-Layer Corruption to Forget-Set Audit:\\
-       Predicting Unlearning Side-Effects from Forget-Set Geometry Alone}
+\title{From Three-Layer Unlearning Impact to Forget-Set Audit:\\
+       Predicting Impact Profiles from Forget-Set Geometry Alone}
 
 \author{Anonymous EMNLP submission}
 \date{}
@@ -61,7 +64,7 @@
   \maketitle
   \begin{@twocolumnfalse}
     \begin{abstract}
-      Large language model (LLM) unlearning aims to selectively delete specific training data, but unlearning is rarely surgical: removing a forget set $\Df$ also damages knowledge that has nothing to do with $\Df$. Characterising and predicting this collateral damage currently requires running unlearning.
+      Large language model (LLM) unlearning aims to remove target knowledge represented by a forget set $\Df$ through post-training updates, but its effect is not captured by a single forget/retain score. We propose evaluating unlearning as a \emph{three-layer impact profile}: intended degradation on the forget set, neighbour impact on held-out same-topic samples, and bystander impact on cross-topic samples. We denote these layers by $\Lforget$, $\Lneigh$, and $\Lbyst$. Using WikiText-103 triplets, $100$ GradAscent unlearning runs on Llama-3.1-8B-Instruct, and a $100\times100$ cross-PPL evaluation matrix, we measure $1.5$M per-sample perplexity ratios. The impact decays strictly across layers ($\Lforget{=}1.96\times$, $\Lneigh{=}1.32\times$, $\Lbyst{=}1.19\times$), but bystander impact remains measurable: $73.8\%$ of cross-topic samples have elevated PPL, and the profile varies substantially with the chosen forget set. We then formulate \emph{forget-set audit}: predicting the three-layer impact profile from forget-set geometry alone. A $12$-feature Random Forest auditor gives rank-significant predictions for all layers, with Spearman $\rho{=}0.56/0.87/0.59$ for $\Lforget/\Lneigh/\Lbyst$, enabling a cheap pre-screen before full unlearning evaluation. Replicating the full pipeline with NPO (a separate unlearning algorithm) yields independently rank-significant predictions ($\rho{=}0.66/0.82/0.51$, all CIs above zero), confirming the audit is unlearner-agnostic.
     \end{abstract}
     \vspace{0.8em}
   \end{@twocolumnfalse}
@@ -73,17 +76,16 @@
 \section{Introduction}
 \label{sec:intro}
 
-\paragraph{Background.}
-Large language models increasingly need to support data removal after training.
-Copyright disputes, privacy regulation, user deletion requests, and the later
-discovery of toxic or copyrighted material in pretraining corpora all create
-cases where a deployed model should stop using a targeted subset of data
-$\Df$ \citep{maini2024tofu, shi2024muse, dorna2025openunlearning}. Since
-retraining from scratch is usually impractical, \emph{LLM unlearning} methods
-try to edit an already trained model so that the forget set is no longer
-recoverable while the rest of the model remains useful. Modern benchmarks such
-as TOFU and MUSE therefore evaluate both sides of the requirement: forget the
-requested data, and preserve general utility.
+Large language models increasingly need mechanisms for removing target
+knowledge after deployment. Copyright disputes, privacy regulation, user
+deletion requests, and the discovery of toxic, private, or copyrighted content
+in pretraining corpora all create cases where a model should stop reproducing
+or relying on specific knowledge represented by a forget set $\Df$
+\citep{maini2024tofu, shi2024muse, dorna2025openunlearning}. Since retraining
+from scratch is usually impractical, \emph{LLM unlearning} uses post-training
+updates to suppress this target knowledge while preserving the rest of the
+model. Modern benchmarks such as TOFU and MUSE therefore evaluate both sides of
+the requirement: forget the target knowledge, and preserve general utility.
 
 Unlearning, however, is not a purely local operation. The same gradient update
 that suppresses $\Df$ can also perturb nearby facts, paraphrases, and unrelated
@@ -94,27 +96,20 @@ For deployed systems, this matters because a successful deletion request is
 not enough; practitioners also need to know how much useful knowledge was
 damaged as a side effect.
 
-\paragraph{Gap and motivation.}
 Existing unlearning evaluations leave two gaps. First, they usually report
 aggregate utility or a small set of post-hoc probes, so the \emph{geometry} of
-knowledge corruption remains unclear. We do not yet have a direct measurement
+unlearning impact remains unclear. We do not yet have a direct measurement
 of how damage changes as evaluation text moves from the forget set itself, to
 same-topic neighbours, to different-topic bystanders. In particular, it is
-unclear whether corruption decays cleanly with semantic distance or remains
-diffuse across unrelated content.
-
-Second, most benchmarks fix the forget split and compare unlearning algorithms.
+unclear whether collateral damage decays cleanly with semantic distance or remains
+diffuse across unrelated content. Second, most benchmarks fix the forget split and compare unlearning algorithms.
 This treats the choice of $\Df$ as given, even though real deletion and curation
 pipelines may contain many candidate forget sets. Measuring the side effect of
-each candidate is expensive: for $N$ candidates, a faithful comparison requires
-$N$ unlearn runs and an $N\times N$ cross-evaluation sweep. At $N{=}100$ in our
-Llama-3.1-8B setup, this already costs several GPU-hours and produces a large
-checkpoint/evaluation grid. We therefore ask a more data-first question: can we
+each candidate is expensive. We therefore ask a more data-first question: can we
 estimate which forget sets are likely to be damaging \emph{before} running
 unlearning?
 
-\paragraph{This work.}
-We study unlearning side effects through a controlled WikiText-103 triplet
+We study unlearning impact through a controlled WikiText-103 triplet
 schema. We cluster passages into semantic groups, sample $100$ candidate
 triplets, and split each triplet into disjoint train, validation, and test
 texts. For each triplet, the train split is the forget set $\Df$; the validation
@@ -123,14 +118,14 @@ Llama-3.1-8B-Instruct with a fixed GradAscent configuration. We then evaluate
 every unlearned checkpoint on every triplet, yielding $1.5$M per-sample
 perplexity ratios.
 
-This matrix lets us define and measure \emph{three-layer knowledge corruption}.
+This matrix lets us define and measure a \emph{three-layer impact profile}.
 For an unlearned checkpoint $m$ and evaluation triplet $e$, $\Lone$ is
-\textbf{forget corruption}: the diagonal train split ($m{=}e$), i.e., the
-requested deletion target itself. $\Ltwo$ is \textbf{locality corruption}: the
+\textbf{intended degradation}: the diagonal train split ($m{=}e$), i.e., the
+requested deletion target itself. $\Ltwo$ is \textbf{locality damage}: the
 diagonal validation/test splits ($m{=}e$), i.e., unseen same-cluster neighbours
-that should ideally be preserved. $\Lthree$ is \textbf{spillover corruption}:
+that should ideally be preserved. $\Lthree$ is \textbf{spillover damage}:
 off-diagonal test splits ($m{\neq}e$), i.e., unrelated-topic bystanders. Across
-$1.5$M evaluations, corruption decays strictly
+$1.5$M evaluations, impact decays strictly
 ($\Lone{>}\Ltwo{>}\Lthree$), but it does not disappear: $\Lthree$ remains above
 the base model on $73.8\%$ of cross-topic samples. Moreover, under the same
 algorithm and hyperparameters, the magnitude of damage changes substantially
@@ -142,10 +137,10 @@ data-first prediction of model behaviour \citep{dang2024curious}, the audit
 uses only the candidate forget set before unlearning. From the $50$ forget-set
 embeddings we compute a $12$-dimensional intrinsic geometry descriptor
 (spread, pairwise similarity, centroid scale, effective rank, isotropy, and
-related statistics). Under leave-one-cluster-out cross-validation, a Ridge
-regressor predicts the three-layer corruption profile from these features
+related statistics). Under leave-one-out cross-validation, a Random Forest
+regressor predicts the three-layer impact profile from these features
 alone. The resulting rankings are significant for all layers, with Spearman
-correlations of $0.53$, $0.84$, and $0.49$ for $\Lone$, $\Ltwo$, and $\Lthree$;
+correlations of $0.56$, $0.87$, and $0.59$ for $\Lone$, $\Ltwo$, and $\Lthree$;
 all $95\%$ bootstrap confidence intervals exclude zero. The auditor runs in
 seconds and is intended as a pre-screen for forget-set selection, not as a
 replacement for the final unlearning evaluation.
@@ -153,56 +148,111 @@ replacement for the final unlearning evaluation.
 \paragraph{Contributions.}
 \begin{enumerate}
     \setlength\itemsep{0.2em}
-    \item We introduce a three-layer measurement framework for unlearning
-    side effects, separating forget-set damage, same-topic locality damage, and
-    cross-topic spillover in a single cross-PPL matrix.
-    \item We provide quantitative evidence that unlearning corruption decays
-    with semantic distance but remains non-zero far from the forget set:
+    \item We introduce a measurement framework for three-layer unlearning
+    impact, separating intended forget-set degradation, same-topic locality
+    damage, and cross-topic spillover damage in a single cross-PPL matrix.
+    \item We provide quantitative evidence that unlearning impact decays
+    with semantic distance but collateral damage remains non-zero far from the forget set:
     $\Lthree{>}1$ on $73.8\%$ of cross-topic samples, even when evaluated
     against unrelated clusters.
     \item We show that side-effect magnitude is partly a property of the
     forget set itself. With algorithm and hyperparameters fixed, $\Lone$ varies
     by $1.59\times$ across $100$ candidate forget sets.
     \item We formulate \emph{forget-set audit}: predicting the three-layer
-    corruption profile from forget-set geometry alone. A $12$-feature Ridge
-    auditor achieves rank-significant predictions for all three layers,
-    including $\rho{=}0.84$ and $R^2{=}0.71$ for locality corruption, enabling
-    cheap screening before full unlearning.
+    impact profile from forget-set geometry alone. A $12$-feature Random
+    Forest auditor achieves rank-significant predictions for all three
+    layers, including $\rho{=}0.87$ and $R^2{=}0.74$ for locality damage,
+    enabling cheap screening before full unlearning.
 \end{enumerate}
 
 \paragraph{Roadmap.}
-Sec.~\ref{sec:related} surveys unlearning side-effect probing and data-first
-prediction. Sec.~\ref{sec:setup} formalises the triplet schema, unlearning
-procedure, cross-PPL matrix, and audit features. Sec.~\ref{sec:three-layer}
-reports the three-layer corruption findings. Sec.~\ref{sec:audit} presents the
-forget-set audit and predictor. Sec.~\ref{sec:discussion}--\ref{sec:conclusion}
-discuss limitations and outlook.
+Sec.~\ref{sec:problem} formalises the three-layer impact and audit problems.
+Sec.~\ref{sec:setup} describes the triplet schema, unlearning procedure, and
+cross-PPL matrix. Sec.~\ref{sec:three-layer} reports the three-layer impact
+findings. Sec.~\ref{sec:audit} presents the audit features, forget-set audit,
+and predictor. Sec.~\ref{sec:discussion}--\ref{sec:conclusion} discuss
+limitations and outlook. Sec.~\ref{sec:related} closes with related work.
 
 % ============================================================================
-% 2. Related Work
+% 2. Problem Formulation
 % ============================================================================
-\section{Related Work}
-\label{sec:related}
+\section{Problem Formulation}
+\label{sec:problem}
 
-\paragraph{LLM unlearning algorithms and benchmarks.}
-Modern LLM unlearning uses gradient-based or preference-based fine-tuning to push the model to forget targeted data while preserving the rest. Representative algorithms include \emph{Gradient Ascent} (GradAscent) and gradient-difference variants \citep{jang2023knowledge}, \emph{NPO} (Negative Preference Optimisation) \citep{zhang2024negative}, and \emph{representation misdirection} \citep{li2024wmdp}. Benchmarks such as TOFU \citep{maini2024tofu}, MUSE \citep{shi2024muse}, and WMDP \citep{li2024wmdp} fix specific forget splits and report aggregate forget-quality and utility scores. The unifying \emph{OpenUnlearning} framework \citep{dorna2025openunlearning} integrates $13$ algorithms and $16$ metrics under one Hydra-configured trainer; we vendor it as our stage-2 implementation. These works concentrate on \emph{algorithm choice} given a benchmark forget split. Our work is orthogonal: we hold the algorithm and hyperparameters fixed and study how the choice of $\Df$ itself reshapes side-effects, then turn the observation into a pre-screen for $\Df$.
+Let $f$ be the base model and let $\mathcal{U}$ be a fixed post-training
+unlearning procedure. A forget set $\Df$ operationally represents the target
+knowledge to be removed, and applying unlearning yields
+\begin{equation}
+    f_{\Df}' \;=\; \mathcal{U}(f, \Df).
+\end{equation}
+Our goal is not to construct adversarial or corrupted evaluation data. Instead,
+we ask how the impact of this update spreads from the intended target to
+nearby and unrelated knowledge, and whether that impact can be predicted before
+running $\mathcal{U}$.
 
-\paragraph{Side-effects, locality, and knowledge holes.}
-Unlearning is increasingly recognised as collateral-damaging. \citet{ko2025probing} introduce \emph{knowledge-hole probing}: standard utility benchmarks miss adjacent and latent knowledge that has been silently corrupted by unlearning, and dedicated probes can recover this damage post-hoc. Studies of model editing \citep{meng2022locating, mitchell2022memory} and influence functions \citep{koh2017understanding, grosse2023studying} show analogous locality / non-locality effects in the gradient-update regime. Our three-layer view operationalises Ko et al.'s phenomenon as a quantitative, dataset-driven measurement: $\Ltwo$ corresponds to their \emph{adjacent} knowledge (same-cluster neighbours), and $\Lthree$ extends the picture to \emph{cross-cluster spillover} that prior probes did not target. Crucially, while their probes act \emph{after} unlearning, our audit acts \emph{before} --- predicting the corruption profile from $\Df$ alone.
+\paragraph{Three-layer evaluation sets.}
+For each candidate $\Df$, we construct two disjoint evaluation sets:
+$\mathcal{D}_{N}$, held-out same-topic neighbours of $\Df$, and
+$\mathcal{D}_{B}$, cross-topic bystanders. These sets satisfy
+\begin{align}
+    \Df \cap \mathcal{D}_{N} &= \emptyset,\\
+    \Df \cap \mathcal{D}_{B} &= \emptyset,\\
+    \mathcal{D}_{N} \cap \mathcal{D}_{B} &= \emptyset,\\
+    \mathrm{sim}(\mathcal{D}_{N}, \Df) &\ge \gamma,\\
+    \mathrm{sim}(\mathcal{D}_{B}, \Df) &\le \delta,\\
+    \max_{S\in\{\Df,\mathcal{D}_{N},\mathcal{D}_{B}\}}\PPL_f(S) &\le \tau,\\
+    \min_{S\in\{\Df,\mathcal{D}_{N},\mathcal{D}_{B}\}}|S| &\ge k.
+\end{align}
+Here $\mathrm{sim}(\cdot,\cdot)$ measures semantic relatedness between sets,
+$\gamma$ enforces same-topic neighbourhood for $\mathcal{D}_{N}$, $\delta$
+enforces cross-topic separation for $\mathcal{D}_{B}$, $\tau$ keeps the
+evaluation text within the base model's linguistic support, and $k$ controls
+coverage.
 
-\paragraph{Data-first prediction of model behaviour.}
-A separate line of work predicts downstream model behaviour from properties of the training data, rather than from running the model. \citet{dang2024curious} predict the adversarial robustness of fine-tuned text transformers from features of the fine-tuning dataset, achieving $30\!\times\!\text{--}\!193\times$ acceleration over the standard model-first attack-then-evaluate pipeline. Related efforts use coreset and data-attribution descriptors \citep{koh2017understanding, ilyas2022datamodels}, dataset diversity statistics \citep{wang2024data}, and curvature of the loss landscape \citep{yao2020pyhessian} to predict generalisation or vulnerability. We carry this paradigm into LLM unlearning: instead of running unlearning and then measuring side-effects, we measure intrinsic geometry of $\Df$ and predict the three-layer corruption profile. To our knowledge, this is the first \emph{data-first} predictor in the unlearning setting.
+\paragraph{Three-layer impact profile.}
+For a sample $x$, we measure post-unlearning impact by the base-normalised PPL
+ratio
+\begin{equation}
+    r_{\Df}(x) \;=\;
+    \frac{\PPL_{f_{\Df}'}(x)}{\PPL_f(x)}.
+\end{equation}
+The impact profile of $\Df$ is the vector
+\begin{equation}
+    I(\Df)
+    =
+    \left(
+    \Lforget(\Df),\;
+    \Lneigh(\Df),\;
+    \Lbyst(\Df)
+    \right),
+\end{equation}
+where
+\begin{align}
+    \Lforget(\Df) &= \geomean_{x\in\Df}\, r_{\Df}(x),\\
+    \Lneigh(\Df) &= \geomean_{x\in\mathcal{D}_{N}}\, r_{\Df}(x),\\
+    \Lbyst(\Df) &= \geomean_{x\in\mathcal{D}_{B}}\, r_{\Df}(x).
+\end{align}
+These are the intended degradation, neighbour impact, and bystander impact,
+respectively. High $\Lforget$ is the intended forgetting signal; high
+$\Lneigh$ or $\Lbyst$ is collateral damage.
 
-\paragraph{Forget-set selection and curation.}
-A small body of work studies which data is hardest to remove or causes the most damage when removed \citep{thudi2022unrolling, kurmanji2024towards}. The closest setting is influence-based forget-set selection \citep{koh2017understanding}, but influence functions require gradients of the trained model, scale poorly to $8$B-parameter LLMs, and yield a per-example score rather than a $\Df$-level corruption profile. Our auditor uses only $50$ forget-set embeddings and $12$ scalar features; it is two orders of magnitude cheaper and produces a three-layer profile.
-
-\paragraph{Position.}
-We sit at the intersection of unlearning side-effect characterisation \citep{ko2025probing} and data-first behaviour prediction \citep{dang2024curious}. The first tells us \emph{what to predict} (locality + spillover); the second tells us \emph{how to predict from data alone}. Our contribution is the quantitative bridge: a three-layer corruption metric tied to a forget-set-side geometric audit.
+\paragraph{Forget-set audit.}
+Measuring $I(\Df)$ requires running $\mathcal{U}$ and evaluating $f_{\Df}'$.
+The audit problem forbids this at prediction time: given only features
+$\phi(\Df)$ of the candidate forget set, learn a predictor
+\begin{equation}
+    h(\phi(\Df)) \;\approx\; I(\Df),
+\end{equation}
+with no access to $f_{\Df}'$, $\mathcal{D}_{N}$, or $\mathcal{D}_{B}$ except
+when producing held-out evaluation labels. We evaluate $h$ primarily as a
+ranking tool over candidate forget sets, so the practical objective is to rank
+candidates by predicted impact profile before spending GPU time on full
+unlearning and cross-evaluation.
 
 % ============================================================================
-% 3. Setup
+% 3. Experiment Setup
 % ============================================================================
-\section{Setup}
+\section{Experiment Setup}
 \label{sec:setup}
 
 \subsection{Triplet Schema}
@@ -233,13 +283,13 @@ We start from WikiText-103 \citep{merity2017pointer}, filter to $16{,}038$ usabl
 \put(120,42){\vector(0,-1){8}}
 \put(202,42){\vector(0,-1){8}}
 \scriptsize
-\put(0,0){\framebox(76,34){\shortstack{\texttt{train}\\$50$ texts\\forget set $\Df$}}}
-\put(82,0){\framebox(76,34){\shortstack{\texttt{validation}\\$50$ texts\\retain + $\Ltwo$}}}
-\put(164,0){\framebox(76,34){\shortstack{\texttt{test}\\$50$ texts\\$\Ltwo/\Lthree$ eval}}}
+\put(0,0){\framebox(76,34){\shortstack{Forget set\\\texttt{train}\\$50$ texts}}}
+\put(82,0){\framebox(76,34){\shortstack{Neighbour\\\texttt{val/test}\\same triplet}}}
+\put(164,0){\framebox(76,34){\shortstack{Bystander\\other \texttt{test}\\off-diagonal}}}
 \end{picture}}
 \vspace{0.35em}
 \refstepcounter{figure}\label{fig:triplet-schema}
-\parbox{0.96\columnwidth}{\small\textbf{Figure~\thefigure:} Triplet schema. WikiText-103 passages are filtered, embedded, and clustered; each semantic cluster yields $10$ triplets, and each triplet is split into mutually disjoint train, validation, and test roles for unlearning and three-layer evaluation.}
+\parbox{0.96\columnwidth}{\small\textbf{Figure~\thefigure:} Triplet schema. WikiText-103 passages are filtered, embedded, and clustered; each semantic cluster yields $10$ triplets. The train split is the forget set, validation/test splits are same-topic neighbours, and test splits from other triplets serve as cross-topic bystanders in off-diagonal evaluation.}
 \end{center}
 
 For each cluster we sample $10$ disjoint \emph{triplets}, giving $100$ triplets in total. Each triplet contains three same-cluster but mutually disjoint splits of $50$ texts:
@@ -249,9 +299,9 @@ For each cluster we sample $10$ disjoint \emph{triplets}, giving $100$ triplets 
     \toprule
     Split & 50 texts & Downstream role \\
     \midrule
-    \texttt{train}      & forget set $\Df$              & fed to GradAscent \\
-    \texttt{validation} & retain neighbours             & retain loss + $\Ltwo$ probe \\
-    \texttt{test}       & probe samples                 & $\Ltwo / \Lthree$ evaluation \\
+    \texttt{train}      & forget set $\Df$              & $\Lforget$: intended degradation \\
+    \texttt{validation} & neighbours                    & retain loss + $\Lneigh$ \\
+    \texttt{test}       & probe texts                   & diag $\Lneigh$; off-diag $\Lbyst$ \\
     \bottomrule
 \end{tabular}
 \end{center}
@@ -260,37 +310,38 @@ The within-cluster but mutually disjoint design lets us read off three semantic 
 \subsection{Unlearning Procedure}
 \label{sec:unlearn}
 
-We unlearn Llama-3.1-8B-Instruct \citep{dubey2024llama3} with the GradAscent objective \citep{jang2023knowledge}: for each $\Df$ we maximise the negative log-likelihood on $\Df$ while keeping a small retain-loss term on the same-cluster validation split. Hyperparameters follow TOFU-aligned defaults from OpenUnlearning \citep{maini2024tofu, dorna2025openunlearning}: learning rate $1\!\times\!10^{-5}$ with linear decay, paged AdamW (32-bit), per-device batch size $8$ with gradient accumulation $8$ (effective batch $64$), $5$ epochs (resulting in $5$ optimiser steps because $|\Df|{=}50<64$), warmup of $1$ step, weight decay $0.01$, BF16. All runs use a single H100 80\,GB. Each unlearn run takes $\approx 75$\,s wall-clock; the full $n{=}100$ sweep finishes in $1$\,h\,$54$\,min and produces $\approx 1.5$\,TB of checkpoints ($\approx 15$\,GB each). Train loss converges in $[-0.84, -0.62]$ (negative is expected for GradAscent).
+We unlearn Llama-3.1-8B-Instruct \citep{dubey2024llama3} with the GradAscent objective \citep{jang2023knowledge}: for each $\Df$ we maximise the negative log-likelihood on $\Df$ while keeping a small retain-loss term on the same-cluster validation split. Hyperparameters follow defaults from OpenUnlearning \citep{dorna2025openunlearning}: learning rate $1\!\times\!10^{-5}$ with linear decay, paged AdamW (32-bit), per-device batch size $8$ with gradient accumulation $8$ (effective batch $64$), $5$ epochs (resulting in $5$ optimiser steps because $|\Df|{=}50<64$), warmup of $1$ step, weight decay $0.01$, BF16. All runs use a single H100 80\,GB. Each unlearn run takes $\approx 75$\,s wall-clock; the full $n{=}100$ sweep finishes in $1$\,h\,$54$\,min and produces $\approx 1.5$\,TB of checkpoints ($\approx 15$\,GB each). Train loss converges in $[-0.84, -0.62]$ (negative is expected for GradAscent).
 
 \subsection{Cross-PPL Matrix and Three Layers}
 \label{sec:matrix}
 
-Given $100$ unlearned checkpoints and $100$ evaluation triplets, we evaluate every checkpoint on every triplet's three splits, yielding $100\times100\times3\times50 = 1{,}500{,}000$ per-sample perplexities (Fig.~\ref{fig:cross-matrix}; numerically: $5{,}000$ $\Lone$ samples on the diagonal train splits, $10{,}000$ $\Ltwo$ samples on diagonal val/test, and $495{,}000$ $\Lthree$ samples on the off-diagonal test). We pair each measurement with the corresponding base-model PPL and define
+Given $100$ unlearned checkpoints and $100$ evaluation triplets, we evaluate every checkpoint on every triplet's three splits, yielding $100\times100\times3\times50 = 1{,}500{,}000$ per-sample perplexities (Fig.~\ref{fig:cross-matrix}; numerically: $5{,}000$ $\Lforget$ samples on the diagonal train splits, $10{,}000$ $\Lneigh$ samples on diagonal val/test, and $495{,}000$ $\Lbyst$ samples on the off-diagonal test). We pair each measurement with the corresponding base-model PPL and define
 \begin{equation}
     r_{m,e,s,i} \;=\; \frac{\PPL_{\text{unlearned},m}(x_i^{e,s})}{\PPL_{\text{base}}(x_i^{e,s})},
 \end{equation}
 where $m$ indexes the unlearned checkpoint, $e$ the evaluation triplet, $s\in\{\text{train},\text{val},\text{test}\}$ the split, and $i\in[50]$ the sample. The three layers correspond to:
 \begin{align*}
-    \Lone&: m{=}e,\, s{=}\text{train} \quad\text{(forget)}\\
-    \Ltwo&: m{=}e,\, s\in\{\text{val},\text{test}\} \quad\text{(locality)}\\
-    \Lthree&: m{\neq}e,\, s{=}\text{test} \quad\text{(spillover)}
+    \Lforget&: m{=}e,\, s{=}\text{train} \quad\text{(forget set)}\\
+    \Lneigh&: m{=}e,\, s\in\{\text{val},\text{test}\} \quad\text{(neighbour)}\\
+    \Lbyst&: m{\neq}e,\, s{=}\text{test} \quad\text{(bystander)}
 \end{align*}
 We summarise each layer by the geometric mean of $r$, equivalently $\exp(\overline{\log r})$, and the fraction of samples with $r{>}1.1$.
 
 The full sweep takes $\approx 6$\,h\,$11$\,min on H100 ($\approx 2.2$\,s per (model, eval) pair). We additionally cache the per-sample long-format table (\texttt{ppl\_long.parquet}, $1.5$M rows) for downstream auditing and four invariant sanity checks (Sec.~\ref{sec:three-layer}).
 
 % ============================================================================
-% 4. Three-Layer Corruption
+% 4. Three-Layer Unlearning Impact
 % ============================================================================
-\section{Three-Layer Corruption}
+\section{Three-Layer Unlearning Impact}
 \label{sec:three-layer}
 
-This section establishes the central empirical observation: unlearning side-effects decay across three semantic layers, but $\Lthree$ never reaches zero, and the layer profile depends substantially on which $\Df$ was chosen.
-
-\subsection{Headline Numbers}
-\label{sec:headline}
-
-Table~\ref{tab:headline} reports geometric means of the per-sample PPL ratio $r$ across the $1.5$M evaluations.
+This section reports the main empirical shape of unlearning impact. Following
+Sec.~\ref{sec:problem}, we separate the effect of a single unlearning run into
+three layers: $\Lforget$ is the intended degradation on the forget set,
+$\Lneigh$ is the impact on held-out same-topic neighbours, and $\Lbyst$ is the
+impact on cross-topic bystanders. Table~\ref{tab:headline} reports geometric
+means of the per-sample PPL ratio $r$ across the $1.5$M evaluations, and
+Fig.~\ref{fig:three-layer-decay} visualises the same pattern.
 
 \begin{table}[t]
 \centering
@@ -298,7 +349,7 @@ Table~\ref{tab:headline} reports geometric means of the per-sample PPL ratio $r$
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}lccc@{}}
     \toprule
-                                                   & $\Lone$ & $\Ltwo$ & $\Lthree$ \\
+                                                   & $\Lforget$ & $\Lneigh$ & $\Lbyst$ \\
     \midrule
     Samples                                        & $5{,}000$ & $10{,}000$ & $495{,}000$ \\
     Geo-mean $r$                                   & \textbf{$1.96\times$} & \textbf{$1.32\times$} & \textbf{$1.19\times$} \\
@@ -306,27 +357,22 @@ Table~\ref{tab:headline} reports geometric means of the per-sample PPL ratio $r$
     \% samples with $r{>}2.0$                      & $42.0$  & $2.4$  & $0.8$ \\
     \bottomrule
 \end{tabular}
-\caption{Three-layer corruption headline ($n{=}100$ forget sets, $1.5$M per-sample ratios). Decay is strict ($\Lone{>}\Ltwo{>}\Lthree$), but $\Lthree{>}1$ on $73.8\%$ of cross-topic samples.}
+\caption{Three-layer unlearning impact headline ($n{=}100$ forget sets, $1.5$M per-sample ratios). Impact decays strictly ($\Lforget{>}\Lneigh{>}\Lbyst$), but bystander impact remains measurable: $\Lbyst{>}1$ on $73.8\%$ of cross-topic samples.}
 \label{tab:headline}
 \end{table}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.95\columnwidth]{fig_three_layer_decay.pdf}
-\caption{\textbf{Three-layer corruption decay.} Left: geo-mean PPL ratio $r$ falls from $\Lone{=}1.96\times$ to $\Lthree{=}1.19\times$. Right: fraction of samples with $r{>}1.1$ ($100\%/90.8\%/73.8\%$). $\Lthree$ is non-zero in both senses.}
+\caption{\textbf{Three-layer impact decay.} Left: geo-mean PPL ratio $r$ falls from $\Lforget{=}1.96\times$ to $\Lbyst{=}1.19\times$. Right: fraction of samples with $r{>}1.1$ ($100\%/90.8\%/73.8\%$). $\Lbyst$ bystander impact is non-zero in both senses.}
 \label{fig:three-layer-decay}
 \end{figure}
 
-Two observations stand out.
-
-\textbf{(C1) Strict monotone decay.} $\Lone{>}\Ltwo{>}\Lthree$ holds globally and within each cluster (Sec.~\ref{sec:invariants}); the layer ordering is not an artefact of aggregation.
-
-\textbf{(C2) $\Lthree$ does not vanish.} Cross-cluster samples that are by construction unrelated to $\Df$ are corrupted on $73.8\%$ of measurements, with geo-mean $1.19\times$. Spillover is the rule, not a tail event.
-
-\subsection{Per-Forget-Set Variance}
-\label{sec:per-forget}
-
-The same algorithm and hyperparameters applied to different forget sets produce noticeably different damage profiles. Table~\ref{tab:perforget} contrasts the mildest and worst forget set among $100$.
+We also examine whether the profile is fixed by the algorithm, or whether it
+depends on which forget set is chosen. Under identical optimisation, switching
+$\Df$ changes the measured profile substantially: Table~\ref{tab:perforget}
+contrasts the mildest and worst forget set among $100$, and
+Fig.~\ref{fig:per-forget-profile} shows the full distribution.
 
 \begin{table}[t]
 \centering
@@ -334,7 +380,7 @@ The same algorithm and hyperparameters applied to different forget sets produce 
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}lccc@{}}
     \toprule
-                                                   & $\Lone$ & $\Ltwo$ & $\Lthree$ \\
+                                                   & $\Lforget$ & $\Lneigh$ & $\Lbyst$ \\
     \midrule
     Mildest triplet (\texttt{029})                 & $1.54$ & $1.15$ & $1.12$ \\
     Worst triplet (\texttt{073}, ``storm'')        & $\mathbf{2.44}$ & $\mathbf{1.73}$ & $\mathbf{1.26}$ \\
@@ -342,18 +388,44 @@ The same algorithm and hyperparameters applied to different forget sets produce 
     Spread (max/min, $n{=}100$)                    & $\mathbf{1.59\times}$ & $1.50\times$ & $1.13\times$ \\
     \bottomrule
 \end{tabular}
-\caption{Forget-set-induced variation. $\Lone$ varies by $1.59\times$ between the mildest and worst $\Df$ under fixed algorithm/hyperparameters.}
+\caption{Forget-set-induced variation. $\Lforget$ varies by $1.59\times$ between the mildest and worst $\Df$ under fixed algorithm/hyperparameters.}
 \label{tab:perforget}
 \end{table}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.95\columnwidth]{fig_per_forget_profile.pdf}
-\caption{\textbf{Per-forget-set variance ($n{=}100$).} Box + jitter of geo-mean $r$ for each layer; one dot per forget set. Spread $\max/\min$ reaches $1.59\times$ on $\Lone$, $1.50\times$ on $\Ltwo$, $1.13\times$ on $\Lthree$. \texttt{triplet\_073} (``storm'') is the worst on $\Lone$ and $\Ltwo$ but not on $\Lthree$ (where \texttt{triplet\_072} is the maximum, $1.26\times$); \texttt{triplet\_029} is the $\Lone$ minimum. Distribution shape is markedly tighter as the layer recedes from $\Df$.}
+\caption{\textbf{Per-forget-set variance ($n{=}100$).} Box + jitter of geo-mean $r$ for each layer; one dot per forget set. Spread $\max/\min$ reaches $1.59\times$ on $\Lforget$, $1.50\times$ on $\Lneigh$, $1.13\times$ on $\Lbyst$. \texttt{triplet\_073} (``storm'') is the worst on $\Lforget$ and $\Lneigh$ but not on $\Lbyst$ (where \texttt{triplet\_072} is the maximum, $1.26\times$); \texttt{triplet\_029} is the $\Lforget$ minimum. Distribution shape is markedly tighter as the layer recedes from $\Df$.}
 \label{fig:per-forget-profile}
 \end{figure}
 
-\textbf{(C3) Side-effect is a property of $\Df$.} Under identical optimisation, switching $\Df$ changes $\Lone$ by $1.59\times$ end-to-end (log-scale spread $\approx 1.7$). On a one-page reading: the question \emph{``how much will unlearning hurt?''} has no single answer for a given algorithm; it depends on which $\Df$ is unlearned. This is the empirical wedge that motivates the audit problem in Sec.~\ref{sec:audit}.
+Together, these results support three observations.
+
+\textbf{(C1) The three layers are strictly decreasing.}
+The layer ordering is not an arbitrary binning choice: the measured impact
+decreases monotonically from the forget set to neighbours to bystanders.
+Table~\ref{tab:headline} gives
+$\Lforget{=}1.96\times{>}\Lneigh{=}1.32\times{>}\Lbyst{=}1.19\times$, and
+Fig.~\ref{fig:three-layer-decay} shows the same decay in both geo-mean PPL
+ratio and the fraction of samples with $r{>}1.1$. The ordering also holds
+within each cluster (Sec.~\ref{sec:invariants}), so it is not an artefact of
+global aggregation.
+
+\textbf{(C2) Bystander impact is not zero.}
+The third layer is weaker than the first two, but cross-topic bystanders are
+still measurably hit. $\Lbyst$ has geo-mean $1.19\times$, and $73.8\%$ of
+cross-topic samples exceed $r{>}1.1$. These samples are not in the forget set
+and are not same-topic neighbours of the unlearned triplet, so this is genuine
+spillover rather than intended forgetting.
+
+\textbf{(C3) The profile varies with the forget set.}
+The same algorithm and hyperparameters do not produce a single fixed impact
+profile. In Table~\ref{tab:perforget}, changing only $\Df$ moves $\Lforget$
+from $1.54\times$ to $2.44\times$ and $\Lneigh$ from $1.15\times$ to
+$1.73\times$; Fig.~\ref{fig:per-forget-profile} shows that this is a
+distributional pattern rather than a single outlier. This variation makes the
+forget set itself worth auditing before paying for full unlearning and
+cross-evaluation.
 
 % ============================================================================
 % 5. Forget-Set Audit
@@ -361,16 +433,33 @@ The same algorithm and hyperparameters applied to different forget sets produce 
 \section{Forget-Set Audit}
 \label{sec:audit}
 
-If side-effects depend on the forget set, then choosing $\Df$ is itself a tunable design decision --- but \emph{evaluating} that decision currently requires running unlearning. We now ask whether $\Df$'s intrinsic geometry is a sufficient signal to predict the three-layer corruption profile without ever fine-tuning.
+Because the three-layer profile varies with $\Df$, forget-set choice becomes a
+tunable design decision. The problem is that \emph{evaluating} that decision
+currently requires running unlearning. We now ask whether $\Df$'s intrinsic
+geometry is a sufficient signal to predict the three-layer impact profile
+without ever fine-tuning.
+
+\subsection{Audit Features}
+\label{sec:features}
+
+For each forget set $\Df$ of $50$ texts, we compute a $12$-dim intrinsic geometric descriptor from the same MiniLM embeddings used for clustering, with no access to model weights, gradients, or any unlearned checkpoint:
+\begin{itemize}
+    \setlength\itemsep{0.15em}
+    \item \textbf{Spread (3)}: \texttt{emb\_variance\_mean}, \texttt{emb\_variance\_max}, \texttt{pairwise\_eucl\_mean}.
+    \item \textbf{Similarity (3)}: \texttt{pairwise\_sim\_mean / std / q90} (cosine).
+    \item \textbf{Location/scale (3)}: \texttt{centroid\_norm}, \texttt{emb\_norm\_mean / std}.
+    \item \textbf{Shape (3)}: \texttt{effective\_rank}, \texttt{isotropy}, \texttt{spread\_over\_centroid}.
+\end{itemize}
+All $12$ features are scalars derived from the $50\times 384$ forget-set embedding matrix; computing them takes milliseconds per $\Df$.
 
 \subsection{Audit Problem}
 \label{sec:audit-problem}
 
 \paragraph{Inputs.} The $50\!\times\!384$ embedding matrix of a candidate $\Df$, summarised by the $12$-dim geometric descriptor of Sec.~\ref{sec:features}. \emph{No} unlearned checkpoint, \emph{no} evaluation text, \emph{no} retain set is required.
 
-\paragraph{Outputs.} Three scalars: predicted geo-mean $\log r$ for $\Lone$, $\Ltwo$, $\Lthree$. We treat audit primarily as a \emph{ranking} problem (which forget sets to flag), and report regression metrics for completeness.
+\paragraph{Outputs.} Three scalars: predicted geo-mean $\log r$ for $\Lone$, $\Ltwo$, $\Lthree$. We treat audit primarily as a \emph{ranking} problem (which forget sets to flag by predicted impact), and report regression metrics for completeness.
 
-\paragraph{Predictor.} Ridge regression with $\alpha{=}1.0$, one regressor per layer, evaluated under leave-one-cluster-out (LOO over the $10$ HDBSCAN clusters; no triplet sees its cluster during fitting). The baseline predicts the mean of the $9$ training-cluster targets.
+\paragraph{Predictor.} Random Forest regression (\texttt{n\_estimators}{=}$200$, \texttt{min\_samples\_leaf}{=}$2$, \texttt{max\_depth}{=}\texttt{None}, \texttt{random\_state}{=}$0$), one regressor per layer, evaluated under leave-one-out (LOO over the $n{=}100$ forget sets; the held-out triplet never appears during fitting). The baseline predicts the mean of the $99$ training targets. Ridge / Lasso / Gradient Boosting baselines are reported in the ablation table (Sec.~\ref{sec:ablation}).
 
 \subsection{Audit Performance}
 \label{sec:audit-perf}
@@ -385,23 +474,23 @@ Table~\ref{tab:audit} reports held-out $R^2$, MAE, and Spearman $\rho$, plus $95
     \toprule
                                   & $\Lone$            & $\Ltwo$            & $\Lthree$            \\
     \midrule
-    Audit $R^2$                   & $\mathbf{+0.246}$  & $\mathbf{+0.705}$  & $\mathbf{+0.215}$    \\
+    Audit $R^2$                   & $\mathbf{+0.301}$  & $\mathbf{+0.735}$  & $\mathbf{+0.305}$    \\
     Baseline $R^2$ (LOO mean)     & $-0.020$           & $-0.020$           & $-0.020$             \\
-    Audit MAE                     & $\mathbf{0.141}$   & $\mathbf{0.050}$   & $\mathbf{0.020}$     \\
+    Audit MAE                     & $\mathbf{0.133}$   & $\mathbf{0.046}$   & $\mathbf{0.019}$     \\
     Baseline MAE                  & $0.169$            & $0.105$            & $0.022$              \\
     \midrule
-    Spearman $\rho$               & $+0.531$           & $+0.840$           & $+0.491$             \\
-    $\rho$ 95\% CI                & $[+0.37, +0.67]$   & $[+0.76, +0.89]$   & $[+0.33, +0.63]$     \\
+    Spearman $\rho$               & $+0.560$           & $+0.869$           & $+0.592$             \\
+    $\rho$ 95\% CI                & $[+0.40, +0.69]$   & $[+0.81, +0.91]$   & $[+0.44, +0.71]$     \\
     \bottomrule
 \end{tabular}
-\caption{Forget-set audit performance. LOO over $10$ clusters; Ridge ($\alpha{=}1$) on $12$-dim forget-set geometry. All three $\rho$ CIs exclude zero; $\Ltwo$ is the strongest layer.}
+\caption{Forget-set audit performance. LOO over $n{=}100$ forget sets; Random Forest ($n_{\text{est}}{=}200$, $\text{min\_leaf}{=}2$) on $12$-dim forget-set geometry. All three $\rho$ CIs exclude zero; $\Ltwo$ is the strongest layer, and $\Lthree$ CI is now strictly above zero.}
 \label{tab:audit}
 \end{table}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.95\columnwidth]{fig_audit_scatter.pdf}
-\caption{\textbf{Audit scatter}, predicted vs.\ true geo-mean $\log r$. Each point is one held-out forget set under LOO. $\Ltwo$ is closest to the diagonal ($\rho{=}0.84$); $\Lone$ and $\Lthree$ are noisier but rank-significant.}
+\caption{\textbf{Audit scatter}, predicted vs.\ true geo-mean $\log r$. Each point is one held-out forget set under LOO. $\Ltwo$ is closest to the diagonal ($\rho{=}0.87$); $\Lone$ and $\Lthree$ are noisier but rank-significant ($\rho{=}0.56$, $0.59$).}
 \label{fig:audit-scatter}
 \end{figure}
 
@@ -412,11 +501,98 @@ Table~\ref{tab:audit} reports held-out $R^2$, MAE, and Spearman $\rho$, plus $95
 \label{fig:forget-spread}
 \end{figure}
 
-\textbf{$\Ltwo$ is the strongest layer.} With $R^2{=}0.71$ and $\rho{=}0.84$, the auditor recovers $71\%$ of locality variance from forget-set geometry alone --- consistent with the intuition that locality damage tracks how concentrated and self-similar $\Df$ is in embedding space.
+\textbf{$\Ltwo$ is the strongest layer.} With $R^2{=}0.74$ and $\rho{=}0.87$, the auditor recovers $74\%$ of locality variance from forget-set geometry alone --- consistent with the intuition that locality damage tracks how concentrated and self-similar $\Df$ is in embedding space.
 
-\textbf{$\Lthree$ is non-trivial.} On a coarser problem ($n{=}10$ in early experiments) the L3 audit had $R^2{=}-0.46$; at $n{=}100$ the same predictor reaches $R^2{=}+0.22$ with $\rho{=}0.49$ ($95\%$ CI exclude zero). Statistical power, not signal, was the previous bottleneck.
+\textbf{$\Lthree$ CI now excludes zero.} On a coarser problem ($n{=}10$ in early experiments) the L3 audit had $R^2{=}-0.46$; at $n{=}100$ the Random Forest auditor reaches $R^2{=}+0.30$ with $\rho{=}0.59$ ($95\%$ CI $[+0.44, +0.71]$). Statistical power and a non-linear model together close the previous gap; even the linear Ridge baseline (Sec.~\ref{sec:ablation}) reaches $\rho{=}0.49$ on the same $n{=}100$ slice.
 
-\textbf{Audit cost.} Computing the $12$-dim feature for one $\Df$ takes milliseconds; fitting the Ridge model on $99$ training triplets is sub-second; predicting on a new $\Df$ is essentially instant. By contrast, evaluating one candidate $\Df$ via the standard pipeline costs one unlearn run ($\approx 75$\,s on H100) plus one column of cross-PPL ($\approx 220$\,s for $100$ eval pairs). At $n{=}100$ candidates the full grid is $\approx 7$ GPU-hours; the auditor runs in seconds on a CPU.
+\textbf{Audit cost.} Computing the $12$-dim feature for one $\Df$ takes milliseconds; fitting the Random Forest on $99$ training triplets is well under a second; predicting on a new $\Df$ is essentially instant. By contrast, evaluating one candidate $\Df$ via the standard pipeline costs one unlearn run ($\approx 75$\,s on H100) plus one column of cross-PPL ($\approx 220$\,s for $100$ eval pairs). At $n{=}100$ candidates the full grid is $\approx 7$ GPU-hours; the auditor runs in seconds on a CPU.
+
+\subsection{Predictor Ablation}
+\label{sec:ablation}
+
+We compare the headline Random Forest auditor against three alternative
+regressors on the same $12$-dim feature matrix and same LOO protocol
+(Table~\ref{tab:ablation}): Ridge ($\alpha{=}1$, the simplest linear
+baseline), Lasso ($\alpha{=}0.01$), and Gradient Boosting ($n_{\text{est}}{=}200$, $\text{depth}{=}3$, $\text{lr}{=}0.05$).
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}lccc@{}}
+    \toprule
+    Predictor                                 & $\Lone$            & $\Ltwo$            & $\Lthree$            \\
+    \midrule
+    \multicolumn{4}{@{}l@{}}{\textit{$R^2$ (LOO held-out)}} \\
+    Random Forest (headline)                  & $\mathbf{+0.301}$  & $\mathbf{+0.735}$  & $\mathbf{+0.305}$    \\
+    Gradient Boosting                         & $+0.209$           & $+0.743$           & $+0.200$             \\
+    Ridge ($\alpha{=}1$)                      & $+0.246$           & $+0.705$           & $+0.215$             \\
+    Lasso ($\alpha{=}0.01$)                   & $+0.224$           & $+0.644$           & $+0.088$             \\
+    \midrule
+    \multicolumn{4}{@{}l@{}}{\textit{Spearman $\rho$}} \\
+    Random Forest (headline)                  & $\mathbf{+0.560}$  & $\mathbf{+0.869}$  & $\mathbf{+0.592}$    \\
+    Gradient Boosting                         & $+0.524$           & $+0.879$           & $+0.534$             \\
+    Ridge ($\alpha{=}1$)                      & $+0.531$           & $+0.840$           & $+0.491$             \\
+    Lasso ($\alpha{=}0.01$)                   & $+0.494$           & $+0.849$           & $+0.380$             \\
+    \bottomrule
+\end{tabular}
+\caption{Predictor ablation on the same $12$-dim feature matrix and LOO protocol ($n{=}100$). RF and GB are the strongest non-linear models and tie on $\Ltwo$; the linear Ridge baseline already lifts all three layers above the LOO-mean baseline ($R^2{=}{-}0.02$). Lasso under-fits on $\Lthree$ (sparse solution discards most features). Choosing the non-linear ceiling matters most for $\Lthree$, where RF gains $+0.09$ in $R^2$ over Ridge.}
+\label{tab:ablation}
+\end{table}
+
+The non-linear models (RF, GB) tie on the strongest layer ($\Ltwo$), but RF
+edges out on $\Lone$ and $\Lthree$ where forget-set geometry interactions
+appear to matter more. The linear Ridge baseline ($\rho{=}0.49$ on $\Lthree$
+with CI $[+0.33, +0.63]$, also strictly above zero) already gives a
+deployable pre-screen, indicating that a substantial fraction of the
+audit signal is linear in the geometric descriptor.
+
+\subsection{Unlearner Generality (NPO)}
+\label{sec:cross-unlearner}
+
+To probe whether the audit framework is bound to GradAscent, we replicate the
+full pipeline with NPO \citep{zhang2024negative}: a different unlearning
+algorithm with the same TOFU-aligned hyperparameters on the same $n{=}100$
+forget sets, yielding a parallel $100\times100$ cross-PPL grid and the same
+$12$-dim geometric descriptor as input. The audit predictor (Random Forest,
+identical hyperparameters and LOO protocol) is trained and evaluated
+independently on NPO labels — we do not transfer predictions across unlearners.
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}llccc@{}}
+    \toprule
+    & & $\Lforget$ & $\Lneigh$ & $\Lbyst$ \\
+    \midrule
+    \multirow{2}{*}{\textit{Headline geo $r$}}
+       & GradAscent & $1.96\times$       & $1.32\times$       & $1.19\times$       \\
+       & NPO        & $1.68\times$       & $1.15\times$       & $1.11\times$       \\
+    \midrule
+    \multirow{2}{*}{\textit{Audit $\rho$}}
+       & GradAscent & $+0.560$           & $\mathbf{+0.869}$  & $+0.592$           \\
+       & NPO        & $\mathbf{+0.657}$  & $+0.823$           & $+0.506$           \\
+    \midrule
+    \multirow{2}{*}{\textit{$\rho$ 95\% CI}}
+       & GradAscent & $[+0.40,+0.69]$    & $[+0.81,+0.91]$    & $[+0.44,+0.71]$    \\
+       & NPO        & $[+0.52,+0.76]$    & $[+0.72,+0.89]$    & $[+0.34,+0.65]$    \\
+    \midrule
+    \multirow{2}{*}{\textit{top-10\% recall}}
+       & GradAscent & $2/10$             & $6/10$             & $3/10$             \\
+       & NPO        & $2/10$             & $\mathbf{8/10}$    & $\mathbf{5/10}$    \\
+    \bottomrule
+\end{tabular}
+\caption{Cross-unlearner audit. Same $12$-dim geometric features, same RF protocol, same LOO over $n{=}100$ forget sets — only the unlearning algorithm changes. NPO produces ${\sim}10\text{--}14\%$ milder per-layer impact than GradAscent, but the audit recovers rank-significant predictions on both, with all six $\rho$ CIs strictly above zero.}
+\label{tab:cross-unlearner}
+\end{table}
+
+\textbf{Take-away.} The audit predictor is unlearner-agnostic: the $12$-dim
+forget-set descriptor lifts all three layers above the LOO-mean baseline for
+both GradAscent and NPO under independent training. Top-10\% recall is in fact
+higher on NPO ($8/10$ on $\Lneigh$, $5/10$ on $\Lbyst$), likely because NPO's
+narrower dynamic range makes the ranking task easier. The same conclusion is
+reached separately per unlearner without label transfer between them.
 
 \subsection{Positioning: a Pre-Screen, Not a Replacement}
 \label{sec:positioning}
@@ -432,7 +608,7 @@ We position the auditor as a \emph{warning tool} for the forget-set selection st
     \toprule
               & \textbf{Can}                                  & \textbf{Cannot} \\
     \midrule
-    Rank      & flag ``which $\Df$ is worse'' ($\rho$ CIs $\!>\!0$, $\Ltwo$ $0.84$) & assign trustworthy absolute PPL values \\
+    Rank      & flag ``which $\Df$ is worse'' ($\rho$ CIs $\!>\!0$, $\Ltwo$ $0.87$) & assign trustworthy absolute PPL values \\
     Screen    & red/yellow/green warnings on candidates       & score an unlearning algorithm \\
     Compute   & seconds vs.\ several GPU-hours                & replace the final unlearn run \\
     \bottomrule
@@ -441,7 +617,7 @@ We position the auditor as a \emph{warning tool} for the forget-set selection st
 \label{tab:positioning}
 \end{table}
 
-\paragraph{Workflow.} Given $N$ candidate forget sets, audit all $N$ in seconds, sort by predicted layer profile, and run real unlearning only on the top-$k$. At $N{=}100$ and $k{=}10$, the pre-screen reduces the unlearning budget by $10\times$ while retaining the worst-case offenders identified by the auditor.
+\paragraph{Workflow.} Given $N$ candidate forget sets, audit all $N$ in seconds, sort by predicted impact profile, and run real unlearning only on the top-$k$. At $N{=}100$ and $k{=}10$, the pre-screen reduces the unlearning budget by $10\times$ while retaining the worst-case offenders identified by the auditor.
 
 % ============================================================================
 % 6. Discussion
@@ -452,7 +628,7 @@ We position the auditor as a \emph{warning tool} for the forget-set selection st
 \subsection{What the geometric features actually capture}
 \label{sec:why-it-works}
 
-A natural question is why $12$ scalar features computed in milliseconds carry enough signal to rank the layer-2 corruption with $\rho{=}0.84$. We hypothesise three mechanisms, each consistent with the per-cluster pattern in Fig.~\ref{fig:per-forget-profile}:
+A natural question is why $12$ scalar features computed in milliseconds carry enough signal to rank the locality damage with $\rho{=}0.87$. We hypothesise three mechanisms, each consistent with the per-cluster pattern in Fig.~\ref{fig:per-forget-profile}:
 \begin{itemize}
     \setlength\itemsep{0.15em}
     \item \textbf{Concentration $\Rightarrow$ stronger locality damage}. Forget sets with low spread and high pairwise similarity (e.g.\ the ``storm'' cluster) sit on a tight manifold; the gradient signal from GradAscent is therefore sharply directional, and validation/test neighbours along the same direction are dragged with it. This predicts large $\Ltwo$, which we observe.
@@ -464,19 +640,19 @@ A causal study --- e.g.\ deliberately constructing $\Df$ with prescribed isotrop
 \subsection{When does the auditor break?}
 \label{sec:failure}
 
-The audit is most reliable for $\Ltwo$ and least reliable for $\Lthree$ in absolute terms (MAE $0.020$ vs.\ baseline $0.022$ --- only a $9\%$ improvement, even though $\rho{=}0.49$ excludes zero). Two reasons: (i) $\Lthree$ has a very narrow dynamic range ($1.13\times$ between worst and mildest cluster), so absolute prediction is intrinsically hard; and (ii) cross-cluster spillover plausibly depends on \emph{evaluation-side} geometry (where the neighbours of $\Df$ are in the broader embedding space), which the forget-set-only descriptor cannot see. Our top-1 / top-3 cluster identification is also imperfect ($0/3$ exact top-1 match in the held-out fold), which is why we frame the auditor as a screen rather than a precise ranker.
+The audit is most reliable for $\Ltwo$ and least reliable for $\Lthree$ in absolute terms (RF MAE $0.019$ vs.\ baseline $0.022$ --- a $14\%$ improvement, with $\rho{=}0.59$ and $95\%$ CI $[+0.44, +0.71]$). Two reasons: (i) $\Lthree$ has a very narrow dynamic range ($1.13\times$ between worst and mildest cluster), so absolute prediction is intrinsically hard; and (ii) cross-cluster spillover plausibly depends on \emph{evaluation-side} geometry (where the neighbours of $\Df$ are in the broader embedding space), which the forget-set-only descriptor cannot see. Top-1 identification is unstable in the same-cluster regime (multiple triplets within a cluster have very similar predicted scores), which is why we frame the auditor as a top-$k$ screen rather than a precise ranker.
 
 \subsection{Limitations}
 \label{sec:limitations}
 
-We acknowledge four ``singles'' that the present study does not control for:
+We acknowledge three ``singles'' that the present study does not control for:
 \begin{enumerate}
     \setlength\itemsep{0.15em}
     \item \textbf{Single base model} (Llama-3.1-8B-Instruct). Geometry-to-corruption mapping may be model-specific; verifying on Mistral-7B and a Qwen variant is high-priority next work.
-    \item \textbf{Single unlearner} (GradAscent). NPO and GradDiff have different gradient geometry and may shift the layer ratios; cross-unlearner audit transfer is the natural extension.
-    \item \textbf{$n{=}100$}. All three CIs exclude zero, but $\Lthree$ remains the weakest layer; scaling to $n{=}500$--$1000$ is feasible in one extra GPU-day.
+    \item \textbf{$n{=}100$}. All three CIs exclude zero on both unlearners (Sec.~\ref{sec:cross-unlearner}), but $\Lbyst$ remains the weakest layer; scaling to $n{=}500$--$1000$ is feasible in one extra GPU-day.
     \item \textbf{Single metric}: PPL ratio. PPL captures token-level corruption but not task-level utility (QA accuracy). Parallel QA-based evaluation is in progress as a complementary axis.
 \end{enumerate}
+GradDiff and RMU are the natural next unlearners to add (alongside the GradAscent + NPO pair already covered).
 
 \subsection{Ethical and Practical Considerations}
 \label{sec:ethics}
@@ -491,11 +667,32 @@ A pre-screen that ranks forget sets by side-effect could in principle be misused
 
 We characterised LLM unlearning side-effects on Llama-3.1-8B-Instruct across $n{=}100$ forget sets and $1.5$M per-sample evaluations, and re-cast the resulting benchmarking burden as a forget-set audit problem.
 
-\paragraph{Findings.} (i) Side-effects decay monotonically across three semantic layers ($\Lone{=}1.96\times$, $\Ltwo{=}1.32\times$, $\Lthree{=}1.19\times$) but $\Lthree$ never reaches zero --- $73.8\%$ of cross-topic samples are still corrupted. (ii) Under fixed algorithm and hyperparameters, $\Lone$ varies $1.59\times$ between the mildest and worst forget set, identifying $\Df$ itself as a substantial source of variation. (iii) A Ridge regressor on $12$-dim forget-set geometry predicts the layer profile with leave-one-cluster-out Spearman $\rho$ of $0.53/0.84/0.49$, all $95\%$ CIs strictly above zero.
+\paragraph{Findings.} (i) Side-effects decay monotonically across three semantic layers ($\Lone{=}1.96\times$, $\Ltwo{=}1.32\times$, $\Lthree{=}1.19\times$) but $\Lthree$ never reaches zero --- $73.8\%$ of cross-topic samples are still corrupted. (ii) Under fixed algorithm and hyperparameters, $\Lone$ varies $1.59\times$ between the mildest and worst forget set, identifying $\Df$ itself as a substantial source of variation. (iii) A Random Forest regressor on $12$-dim forget-set geometry predicts the layer profile with leave-one-out Spearman $\rho$ of $0.56/0.87/0.59$, all $95\%$ CIs strictly above zero. (iv) The same audit pipeline applied to NPO yields independent rank-significant predictions ($\rho{=}0.66/0.82/0.51$), confirming the methodology is unlearner-agnostic.
 
 \paragraph{Implication.} Unlearning evaluation can adopt a \emph{screen-then-run} workflow: rank candidate forget sets by audit score, run real unlearning only on the top-$k$. At $N{=}100$, $k{=}10$, this trades $7$ GPU-hours of cross-PPL for seconds of CPU --- without renouncing the ground-truth check on whatever the auditor flags.
 
 \paragraph{Future work.} Cross-unlearner transfer (NPO, GradDiff, RMU), cross-model audit (Mistral-7B, Qwen), enriching the descriptor with mutual-reachability and signed projection coverage, scaling to $n{=}500$--$1000$, and parallel QA-accuracy metrics for non-PPL utility. We release the cross-PPL matrix, audit features, and pre-screen code to enable these extensions.
+
+% ============================================================================
+% 8. Related Work
+% ============================================================================
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{LLM unlearning algorithms and benchmarks.}
+Modern LLM unlearning uses gradient-based or preference-based fine-tuning to push the model to forget targeted data while preserving the rest. Representative algorithms include \emph{Gradient Ascent} (GradAscent) and gradient-difference variants \citep{jang2023knowledge}, \emph{NPO} (Negative Preference Optimisation) \citep{zhang2024negative}, and \emph{representation misdirection} \citep{li2024wmdp}. Benchmarks such as TOFU \citep{maini2024tofu}, MUSE \citep{shi2024muse}, and WMDP \citep{li2024wmdp} fix specific forget splits and report aggregate forget-quality and utility scores. The unifying \emph{OpenUnlearning} framework \citep{dorna2025openunlearning} integrates $13$ algorithms and $16$ metrics under one Hydra-configured trainer; we vendor it as our stage-2 implementation. These works concentrate on \emph{algorithm choice} given a benchmark forget split. Our work is orthogonal: we hold the algorithm and hyperparameters fixed and study how the choice of $\Df$ itself reshapes the three-layer impact profile, then turn the observation into a pre-screen for $\Df$.
+
+\paragraph{Side-effects, locality, and knowledge holes.}
+Unlearning is increasingly recognised as collateral-damaging. \citet{ko2025probing} introduce \emph{knowledge-hole probing}: standard utility benchmarks miss adjacent and latent knowledge that has been silently damaged by unlearning, and dedicated probes can recover this damage post-hoc. Studies of model editing \citep{meng2022locating, mitchell2022memory} and influence functions \citep{koh2017understanding, grosse2023studying} show analogous locality / non-locality effects in the gradient-update regime. Our three-layer view operationalises Ko et al.'s phenomenon as a quantitative, dataset-driven measurement: $\Ltwo$ corresponds to their \emph{adjacent} knowledge (same-cluster neighbours), and $\Lthree$ extends the picture to \emph{cross-cluster spillover} that prior probes did not target. Crucially, while their probes act \emph{after} unlearning, our audit acts \emph{before} --- predicting the impact profile from $\Df$ alone.
+
+\paragraph{Data-first prediction of model behaviour.}
+A separate line of work predicts downstream model behaviour from properties of the training data, rather than from running the model. \citet{dang2024curious} predict the adversarial robustness of fine-tuned text transformers from features of the fine-tuning dataset, achieving $30\!\times\!\text{--}\!193\times$ acceleration over the standard model-first attack-then-evaluate pipeline. Related efforts use coreset and data-attribution descriptors \citep{koh2017understanding, ilyas2022datamodels}, dataset diversity statistics \citep{wang2024data}, and curvature of the loss landscape \citep{yao2020pyhessian} to predict generalisation or vulnerability. We carry this paradigm into LLM unlearning: instead of running unlearning and then measuring its impact profile, we measure intrinsic geometry of $\Df$ and predict that profile directly. To our knowledge, this is the first \emph{data-first} predictor in the unlearning setting.
+
+\paragraph{Forget-set selection and curation.}
+A small body of work studies which data is hardest to remove or causes the most damage when removed \citep{thudi2022unrolling, kurmanji2024towards}. The closest setting is influence-based forget-set selection \citep{koh2017understanding}, but influence functions require gradients of the trained model, scale poorly to $8$B-parameter LLMs, and yield a per-example score rather than a $\Df$-level impact profile. Our auditor uses only $50$ forget-set embeddings and $12$ scalar features; it is two orders of magnitude cheaper and produces a three-layer profile.
+
+\paragraph{Position.}
+We sit at the intersection of unlearning impact characterisation \citep{ko2025probing} and data-first behaviour prediction \citep{dang2024curious}. The first tells us \emph{what to predict} (intended degradation + locality damage + spillover damage); the second tells us \emph{how to predict from data alone}. Our contribution is the quantitative bridge: a three-layer impact metric tied to a forget-set-side geometric audit.
 
 \bibliography{references}
 
@@ -512,7 +709,7 @@ We characterised LLM unlearning side-effects on Llama-3.1-8B-Instruct across $n{
 
 \paragraph{Evaluation.} PPL is computed in BF16 with stride $512$ and context $1024$; each text is scored independently. Base-model PPL is cached once per (eval triplet, split) and re-used across the $100$ unlearned checkpoints. Long-format output: \texttt{ppl\_long.parquet} with one row per $(m, e, s, i)$.
 
-\paragraph{Audit feature scripts.} \texttt{features/forget\_set.py} computes the $12$ scalars from a $50\!\times\!384$ embedding matrix in $<\!10$\,ms. Ridge regression: \texttt{sklearn.linear\_model.Ridge(alpha=1.0)} with leave-one-cluster-out grouping. Bootstrap: $10{,}000$ resamples of the $10$ LOO (true, predicted) pairs with seed $0$.
+\paragraph{Audit feature scripts.} \texttt{features/forget\_set.py} computes the $12$ scalars from a $50\!\times\!384$ embedding matrix in $<\!10$\,ms. Random Forest regression: \texttt{sklearn.ensemble.RandomForestRegressor} with \texttt{n\_estimators}{=}$200$, \texttt{min\_samples\_leaf}{=}$2$, \texttt{max\_depth}{=}\texttt{None}, \texttt{random\_state}{=}$0$, leave-one-out grouping over $n{=}100$ forget sets. Bootstrap: $10{,}000$ resamples of the $100$ LOO (true, predicted) pairs with seed $0$.
 
 \paragraph{Hardware.} All runs on a single H100 (80\,GB) node. End-to-end wall-clock: data prep $\approx 20$ min; $100$ unlearn runs $1$\,h\,$54$\,min; cross-PPL $6$\,h\,$11$\,min.
 

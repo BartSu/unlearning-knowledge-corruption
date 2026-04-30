@@ -16,7 +16,7 @@ Paper Act II 的方法论核心：**在不真跑 unlearn 的前提下**，用 fo
 
 ## `regression-predictor/` —— 4 个编号脚本
 
-脚本编号为 **3/4/5/6**（非 1-based）—— 保留历史编号以维持 git log 连续性；原 `1.training_data.py` / `2.train_rf.py` 随 262 维 ablation 一起在 2026-04-23 移除。**运行顺序**按编号递增：
+脚本编号为 **3/4/5/6/7**（非 1-based）—— 保留历史编号以维持 git log 连续性；原 `1.training_data.py` / `2.train_rf.py` 随 262 维 ablation 一起在 2026-04-23 移除。**运行顺序**按编号递增：
 
 | 脚本 | 产物 | 用途 |
 |---|---|---|
@@ -24,6 +24,7 @@ Paper Act II 的方法论核心：**在不真跑 unlearn 的前提下**，用 fo
 | `4.audit_experiments.py` | `audit/{part1_*, part2_*, part3_*, audit_summary.json}` | **paper headline**：LOO by `forget_cluster` 在 **12 维 per-forget-set** 几何上跑 Ridge → L1/L2/L3 R²/ρ |
 | `5.bootstrap_rho_ci.py` | 追加 `bootstrap_rho_ci` 到 `audit_summary.json` | Spearman ρ 95% CI（percentile, n_boot=10000, seed=0） |
 | `6.heldout_r2_mae.py` | 追加 `heldout_r2_mae` 到 `audit_summary.json` | LOO held-out R²/MAE + LOO-mean baseline 对照 |
+| `7.ranking_metrics.py` | 追加 `ranking_metrics` 到 `audit_summary.json` | top-k recall (k=5/10/20%) + NDCG@k + Kendall τ + pairwise concordance + bootstrap CI + random baseline lift。**Act II "粗筛预警" 的真考卷** |
 
 ## 上下游契约
 
@@ -44,6 +45,7 @@ Paper Act II 的方法论核心：**在不真跑 unlearn 的前提下**，用 fo
   - `coverage_vs_spillover` (retain coverage 与 L3 spillover 相关性)
   - `bootstrap_rho_ci` (95% CI)
   - `heldout_r2_mae` (LOO R²/MAE + baseline 对照)
+  - `ranking_metrics` (top-k recall / NDCG / Kendall τ + bootstrap CI + lift over random)
 
 ## 对 Claude 的具体要求
 
@@ -53,6 +55,8 @@ Paper Act II 的方法论核心：**在不真跑 unlearn 的前提下**，用 fo
 4. **Paper narrative 用 12 维 forget-set 几何**：`4.audit_experiments.py` 产的 `audit/audit_summary.json` 里 `audit_predictor` 字段是 headline；`3.corruption_from_geometry.py` 的 16 维 per-sample 几何是**并行视角**的验证。汇报数字先报 4 的 Part 2。
 5. **n=10 的 L3 R² 负值是预期**：bootstrap CI 跨零已证 LOO n=10 对 L3 信号量不够。**不是 bug**，是扩 n 的动机。`STATE.md` 里解释与 slides 一致。
 6. **Ridge alpha 当前写死 1.0**：扩 n 时建议加 GridSearchCV (alpha ∈ [0.01..10])。当前 TODO，不阻塞。
+
+7. **n=100 同簇 triplet 几何高度相似 → top-1 / top-3 不可靠**：`audit_summary.json["audit_predictor"]["top1_match"]` / `top3_overlap` 在 n=100 下都是 0，看起来"完全没找对"。但实际 ρ=0.49–0.84，top-10% recall lift 2–5×。**汇报 audit 能力时优先看 `ranking_metrics.layers.*.topk` 的 recall + lift_over_random + CI**，不要再把 top-1/top-3 单独拎出来当 headline；它在 100 个 forget set + 同簇邻居（如 #71/#72/#73）几何噪声下天然不稳。
 
 ## 已踩过的坑（留档）
 
@@ -82,12 +86,13 @@ python 3.corruption_from_geometry.py    # 16 维 LOGO-CV
 python 4.audit_experiments.py           # 12 维 LOO → audit_summary.json
 python 5.bootstrap_rho_ci.py            # 追加 CI
 python 6.heldout_r2_mae.py              # 追加 held-out + baseline
+python 7.ranking_metrics.py             # 追加 top-k recall / NDCG / lift
 
 python3 -c "import json; s=json.load(open('audit/audit_summary.json')); print(sorted(s.keys()))"
 ```
 
 期望（n=10 TOFU-aligned 实测 2026-04-23）：
-- 5 个顶级 key：`layer_headline / audit_predictor / coverage_vs_spillover / bootstrap_rho_ci / heldout_r2_mae`
+- 6 个顶级 key：`audit_predictor / bootstrap_rho_ci / coverage_vs_spillover / heldout_r2_mae / layer_headline / ranking_metrics`
 - audit_predictor L1 R²=+0.292 / L2=+0.523 / L3=−0.458
 - bootstrap_rho_ci L1 [+0.08, +0.91] / L2 [+0.43, +1.00] / L3 [−0.51, +0.71]
 - heldout audit 胜 LOO-mean baseline（baseline 三层都是 R²=−0.235）：L1 / L2 胜，L3 输（n=10 信号不足，扩 n=100 的动机）

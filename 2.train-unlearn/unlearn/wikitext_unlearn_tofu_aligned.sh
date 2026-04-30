@@ -24,8 +24,8 @@
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-OPEN_UNLEARN_DIR="/media/volume/llm/unlearning/2.train-unlearn/open-unlearning"
-TRIPLET_ROOT="/media/volume/llm/unlearning/1.data-preparation/data/wikitext_hdbscan_triplets"
+OPEN_UNLEARN_DIR="/media/volume/llm/unlearning-knowledge-corruption/2.train-unlearn/open-unlearning"
+TRIPLET_ROOT="/media/volume/llm/unlearning-knowledge-corruption/1.data-preparation/data/wikitext_hdbscan_triplets"
 
 SAVE_DIR="${SCRIPT_DIR}/saves/wikitext_unlearn_tofu"
 LOG_DIR="${SCRIPT_DIR}/logs_wikitext_unlearn_tofu"

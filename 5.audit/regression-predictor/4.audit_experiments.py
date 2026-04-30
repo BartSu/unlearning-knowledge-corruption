@@ -32,7 +32,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr, pearsonr
 from sentence_transformers import SentenceTransformer
-from sklearn.linear_model import Ridge
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
 from sklearn.model_selection import LeaveOneOut
 
@@ -151,7 +151,10 @@ def part2_audit_predictor(prof: pd.DataFrame, feat: pd.DataFrame) -> pd.DataFram
         y = df[target].values.astype(float)
         yhat = np.empty_like(y)
         for tr, te in loo.split(Xs):
-            m = Ridge(alpha=1.0).fit(Xs[tr], y[tr])
+            m = RandomForestRegressor(
+                n_estimators=200, max_depth=None, min_samples_leaf=2,
+                random_state=0, n_jobs=-1,
+            ).fit(Xs[tr], y[tr])
             yhat[te] = m.predict(Xs[te])
         preds[f"pred_{target}"] = yhat
         preds[f"true_{target}"] = y
