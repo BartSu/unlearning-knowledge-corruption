@@ -15,9 +15,15 @@
 # Claude Code ephemeral state
 .claude/scheduled_tasks.lock
 .claude/settings.local.json
+.claude/agent-memory/
+.claude/agents/
 
 # per-project memory/plans local files
 .claude/plans/
+
+# scripts/ pipeline state markers (transient)
+scripts/.n100_state
+scripts/.stage2_done
 
 # Python cache
 **/__pycache__/
