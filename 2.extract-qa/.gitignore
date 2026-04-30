@@ -1,5 +1,0 @@
-*.json
-*.csv
-__pycache__/
-*_eval*/
-results/
