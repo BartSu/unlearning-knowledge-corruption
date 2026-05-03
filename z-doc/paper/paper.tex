@@ -313,35 +313,38 @@ For each cluster we sample $10$ disjoint \emph{triplets}, giving $100$ triplets 
     \toprule
     Split & 50 texts & Downstream role \\
     \midrule
-    \texttt{train}      & forget set $\Df$              & $\Lforget$: intended degradation \\
-    \texttt{validation} & neighbours                    & retain loss + $\Lneigh$ \\
-    \texttt{test}       & probe texts                   & diag $\Lneigh$; off-diag $\Lbyst$ \\
+    \texttt{train}      & forget set $\Df$              & unlearning target \\
+    \texttt{validation} & neighbours                    & retain/probe \\
+    \texttt{test}       & probe texts                   & diag/off-diag probe \\
     \bottomrule
 \end{tabular}
 \end{center}
-The within-cluster but mutually disjoint design lets us read off three semantic distances by simply re-indexing the same evaluation matrix. Different triplets may overlap across clusters (sampling is independent), but within a triplet the three splits never share a text.
+The within-cluster but mutually disjoint design supports both same-topic and
+cross-topic evaluation by re-indexing the same triplet collection. Different
+triplets may overlap across clusters because sampling is independent, but
+within a triplet the three splits never share a text.
 
 \subsection{Unlearning Procedure}
 \label{sec:unlearn}
 
 We unlearn Llama-3.1-8B-Instruct \citep{dubey2024llama3} with the GradAscent objective \citep{jang2023knowledge}: for each $\Df$ we maximise the negative log-likelihood on $\Df$ while keeping a small retain-loss term on the same-cluster validation split. Hyperparameters follow defaults from OpenUnlearning \citep{dorna2025openunlearning}: learning rate $1\!\times\!10^{-5}$ with linear decay, paged AdamW (32-bit), per-device batch size $8$ with gradient accumulation $8$ (effective batch $64$), $5$ epochs (resulting in $5$ optimiser steps because $|\Df|{=}50<64$), warmup of $1$ step, weight decay $0.01$, BF16. All runs use a single H100 80\,GB. Each unlearn run takes $\approx 75$\,s wall-clock; the full $n{=}100$ sweep finishes in $1$\,h\,$54$\,min and produces $\approx 1.5$\,TB of checkpoints ($\approx 15$\,GB each). Train loss converges in $[-0.84, -0.62]$ (negative is expected for GradAscent).
 
-\subsection{Cross-PPL Matrix and Three Layers}
+\subsection{Cross-PPL Evaluation Protocol}
 \label{sec:matrix}
 
-Given $100$ unlearned checkpoints and $100$ evaluation triplets, we evaluate every checkpoint on every triplet's three splits, yielding $100\times100\times3\times50 = 1{,}500{,}000$ per-sample perplexities (Fig.~\ref{fig:cross-matrix}; numerically: $5{,}000$ $\Lforget$ samples on the diagonal train splits, $10{,}000$ $\Lneigh$ samples on diagonal val/test, and $495{,}000$ $\Lbyst$ samples on the off-diagonal test). We pair each measurement with the corresponding base-model PPL and define
-\begin{equation}
-    r_{m,e,s,i} \;=\; \frac{\PPL_{\text{unlearned},m}(x_i^{e,s})}{\PPL_{\text{base}}(x_i^{e,s})},
-\end{equation}
-where $m$ indexes the unlearned checkpoint, $e$ the evaluation triplet, $s\in\{\text{train},\text{val},\text{test}\}$ the split, and $i\in[50]$ the sample. The three layers correspond to:
-\begin{align*}
-    \Lforget&: m{=}e,\, s{=}\text{train} \quad\text{(forget set)}\\
-    \Lneigh&: m{=}e,\, s\in\{\text{val},\text{test}\} \quad\text{(neighbour)}\\
-    \Lbyst&: m{\neq}e,\, s{=}\text{test} \quad\text{(bystander)}
-\end{align*}
-We summarise each layer by the geometric mean of $r$, equivalently $\exp(\overline{\log r})$, and the fraction of samples with $r{>}1.1$.
+Following Sec.~\ref{sec:problem}, we evaluate every unlearned checkpoint on
+every triplet split and normalise each PPL by the corresponding base-model
+PPL. With $100$ checkpoints, $100$ evaluation triplets, $3$ splits, and $50$
+texts per split, the sweep yields $1.5$M per-sample ratios. The diagonal
+entries provide $5{,}000$ forget-set samples and $10{,}000$ same-topic held-out
+samples; off-diagonal test splits provide $495{,}000$ cross-topic bystander
+samples.
 
-The full sweep takes $\approx 6$\,h\,$11$\,min on H100 ($\approx 2.2$\,s per (model, eval) pair). We additionally cache the per-sample long-format table (\texttt{ppl\_long.parquet}, $1.5$M rows) for downstream auditing and four invariant sanity checks (Sec.~\ref{sec:three-layer}).
+For reporting, we aggregate the layer labels defined in Sec.~\ref{sec:problem}
+by geometric mean and by the fraction of samples with ratio $r{>}1.1$. The
+full cross-PPL sweep takes $\approx 6$\,h\,$11$\,min on one H100
+($\approx 2.2$\,s per checkpoint--triplet pair). We cache a $1.5$M-row
+long-format table for downstream auditing and sanity checks.
 
 % ============================================================================
 % 4. Three-Layer Unlearning Impact
@@ -422,7 +425,7 @@ Table~\ref{tab:headline} gives
 $\Lforget{=}1.96\times{>}\Lneigh{=}1.32\times{>}\Lbyst{=}1.19\times$, and
 Fig.~\ref{fig:three-layer-decay} shows the same decay in both geo-mean PPL
 ratio and the fraction of samples with $r{>}1.1$. The ordering also holds
-within each cluster (Sec.~\ref{sec:invariants}), so it is not an artefact of
+within each cluster (Appendix~\ref{app:tables}), so it is not an artefact of
 global aggregation.
 
 \textbf{(C2) Bystander impact is not zero.}
@@ -456,24 +459,59 @@ without ever fine-tuning.
 \subsection{Audit Features}
 \label{sec:features}
 
-For each forget set $\Df$ of $50$ texts, we compute a $12$-dim intrinsic geometric descriptor from the same MiniLM embeddings used for clustering, with no access to model weights, gradients, or any unlearned checkpoint:
-\begin{itemize}
-    \setlength\itemsep{0.15em}
-    \item \textbf{Spread (3)}: \texttt{emb\_variance\_mean}, \texttt{emb\_variance\_max}, \texttt{pairwise\_eucl\_mean}.
-    \item \textbf{Similarity (3)}: \texttt{pairwise\_sim\_mean / std / q90} (cosine).
-    \item \textbf{Location/scale (3)}: \texttt{centroid\_norm}, \texttt{emb\_norm\_mean / std}.
-    \item \textbf{Shape (3)}: \texttt{effective\_rank}, \texttt{isotropy}, \texttt{spread\_over\_centroid}.
-\end{itemize}
+For each forget set $\Df$ of $50$ texts, we compute a $12$-dim intrinsic
+geometric descriptor from the same MiniLM embeddings used for clustering, with
+no access to model weights, gradients, or any unlearned checkpoint. The features
+fall into four groups:
+\begin{center}
+\footnotesize
+\begin{tabular}{@{}ll@{}}
+    \toprule
+    Group & Feature \\
+    \midrule
+    Spread (3)
+        & \texttt{emb\_variance\_mean} \\
+        & \texttt{emb\_variance\_max} \\
+        & \texttt{pairwise\_eucl\_mean} \\
+    Similarity (3)
+        & \texttt{pairwise\_sim\_mean} \\
+        & \texttt{pairwise\_sim\_std} \\
+        & \texttt{pairwise\_sim\_q90} \\
+    Location/scale (3)
+        & \texttt{centroid\_norm} \\
+        & \texttt{emb\_norm\_mean} \\
+        & \texttt{emb\_norm\_std} \\
+    Shape (3)
+        & \texttt{effective\_rank} \\
+        & \texttt{isotropy} \\
+        & \texttt{spread\_over\_centroid} \\
+    \bottomrule
+\end{tabular}
+\end{center}
 All $12$ features are scalars derived from the $50\times 384$ forget-set embedding matrix; computing them takes milliseconds per $\Df$.
 
 \subsection{Audit Problem}
 \label{sec:audit-problem}
 
-\paragraph{Inputs.} The $50\!\times\!384$ embedding matrix of a candidate $\Df$, summarised by the $12$-dim geometric descriptor of Sec.~\ref{sec:features}. \emph{No} unlearned checkpoint, \emph{no} evaluation text, \emph{no} retain set is required.
+\paragraph{Input.} For a candidate forget set $\Df$, the auditor observes only
+the embedding-derived feature vector $\phi(\Df)\in\mathbb{R}^{12}$ from
+Sec.~\ref{sec:features}. It does not use an unlearned checkpoint, evaluation
+texts, retain texts, gradients, or model weights.
 
-\paragraph{Outputs.} Three scalars: predicted geo-mean $\log r$ for $\Lone$, $\Ltwo$, $\Lthree$. We treat audit primarily as a \emph{ranking} problem (which forget sets to flag by predicted impact), and report regression metrics for completeness.
+\paragraph{Target.} The output is a three-dimensional prediction for the
+future impact profile: geo-mean $\log r$ on $\Lone$, $\Ltwo$, and $\Lthree$.
+Equivalently, exponentiating each coordinate gives the predicted layer-level
+PPL ratio. We use audit primarily for \emph{ranking}: identifying which
+candidate forget sets are likely to produce larger intended degradation,
+same-topic locality damage, or cross-topic spillover.
 
-\paragraph{Predictor.} Random Forest regression (\texttt{n\_estimators}{=}$200$, \texttt{min\_samples\_leaf}{=}$2$, \texttt{max\_depth}{=}\texttt{None}, \texttt{random\_state}{=}$0$), one regressor per layer, evaluated under leave-one-out (LOO over the $n{=}100$ forget sets; the held-out triplet never appears during fitting). The baseline predicts the mean of the $99$ training targets. Ridge / Lasso / Gradient Boosting baselines are reported in the ablation table (Sec.~\ref{sec:ablation}).
+\paragraph{Training protocol.} We train one Random Forest regressor per layer
+($n_{\text{est}}{=}200$, minimum leaf size $2$, unbounded depth, seed $0$).
+Evaluation is leave-one-out over the $n{=}100$ forget sets: for each held-out
+candidate, the auditor is fit on the other $99$ candidates and then predicts
+the held-out impact profile. The baseline predicts the mean target value from
+the $99$ training candidates. Ridge, Lasso, and Gradient Boosting variants use
+the same features and LOO protocol and are reported in Sec.~\ref{sec:ablation}.
 
 \subsection{Audit Performance}
 \label{sec:audit-perf}
@@ -482,38 +520,38 @@ Table~\ref{tab:audit} reports held-out $R^2$, MAE, and Spearman $\rho$, plus $95
 
 \begin{table}[t]
 \centering
-\small
-\setlength{\tabcolsep}{3.5pt}
+\footnotesize
+\setlength{\tabcolsep}{2.2pt}
 \begin{tabular}{@{}lccc@{}}
     \toprule
-                                  & $\Lone$            & $\Ltwo$            & $\Lthree$            \\
+                         & $\Lone$            & $\Ltwo$            & $\Lthree$            \\
     \midrule
-    Audit $R^2$                   & $\mathbf{+0.301}$  & $\mathbf{+0.735}$  & $\mathbf{+0.305}$    \\
-    Baseline $R^2$ (LOO mean)     & $-0.020$           & $-0.020$           & $-0.020$             \\
-    Audit MAE                     & $\mathbf{0.133}$   & $\mathbf{0.046}$   & $\mathbf{0.019}$     \\
-    Baseline MAE                  & $0.169$            & $0.105$            & $0.022$              \\
+    Audit $R^2$          & $\mathbf{+0.301}$  & $\mathbf{+0.735}$  & $\mathbf{+0.305}$    \\
+    Mean $R^2$           & $-0.020$           & $-0.020$           & $-0.020$             \\
+    Audit MAE            & $\mathbf{0.133}$   & $\mathbf{0.046}$   & $\mathbf{0.019}$     \\
+    Mean MAE             & $0.169$            & $0.105$            & $0.022$              \\
     \midrule
-    Spearman $\rho$               & $+0.560$           & $+0.869$           & $+0.592$             \\
-    $\rho$ 95\% CI                & $[+0.40, +0.69]$   & $[+0.81, +0.91]$   & $[+0.44, +0.71]$     \\
+    Spearman $\rho$      & $+0.560$           & $+0.869$           & $+0.592$             \\
+    $\rho$ 95\% CI       & $[.40,.69]$        & $[.81,.91]$        & $[.44,.71]$          \\
     \bottomrule
 \end{tabular}
-\caption{Forget-set audit performance. LOO over $n{=}100$ forget sets; Random Forest ($n_{\text{est}}{=}200$, $\text{min\_leaf}{=}2$) on $12$-dim forget-set geometry. All three $\rho$ CIs exclude zero; $\Ltwo$ is the strongest layer, and $\Lthree$ CI is now strictly above zero.}
+\caption{Forget-set audit performance. LOO over $n{=}100$ forget sets; Random Forest ($n_{\text{est}}{=}200$, $\text{min\_leaf}{=}2$) on $12$-dim forget-set geometry. Mean rows are LOO mean baselines. All three $\rho$ CIs exclude zero; $\Ltwo$ is the strongest layer, and $\Lthree$ CI is now strictly above zero.}
 \label{tab:audit}
 \end{table}
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=0.95\columnwidth]{fig_audit_scatter.pdf}
+\includegraphics[width=0.78\textwidth]{fig_audit_scatter.pdf}
 \caption{\textbf{Audit scatter}, predicted vs.\ true geo-mean $\log r$. Each point is one held-out forget set under LOO. $\Ltwo$ is closest to the diagonal ($\rho{=}0.87$); $\Lone$ and $\Lthree$ are noisier but rank-significant ($\rho{=}0.56$, $0.59$).}
 \label{fig:audit-scatter}
-\end{figure}
+\end{figure*}
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=0.95\columnwidth]{fig_forget_spread.pdf}
+\includegraphics[width=0.78\textwidth]{fig_forget_spread.pdf}
 \caption{\textbf{Forget-set spread.} Distribution of per-forget-set $\Lone$ across the $100$ triplets, grouped by HDBSCAN cluster. The variation auditing must capture is between-cluster more than within-cluster.}
 \label{fig:forget-spread}
-\end{figure}
+\end{figure*}
 
 \textbf{$\Ltwo$ is the strongest layer.} With $R^2{=}0.74$ and $\rho{=}0.87$, the auditor recovers $74\%$ of locality variance from forget-set geometry alone --- consistent with the intuition that locality damage tracks how concentrated and self-similar $\Df$ is in embedding space.
 
@@ -574,30 +612,34 @@ independently on NPO labels — we do not transfer predictions across unlearners
 
 \begin{table}[t]
 \centering
-\small
-\setlength{\tabcolsep}{3pt}
+\footnotesize
+\setlength{\tabcolsep}{2.1pt}
 \begin{tabular}{@{}llccc@{}}
     \toprule
-    & & $\Lforget$ & $\Lneigh$ & $\Lbyst$ \\
+    Metric & Alg. & $\Lforget$ & $\Lneigh$ & $\Lbyst$ \\
     \midrule
-    \multirow{2}{*}{\textit{Headline geo $r$}}
+    geo $r$
        & GradAscent & $1.96\times$       & $1.32\times$       & $1.19\times$       \\
+    geo $r$
        & NPO        & $1.68\times$       & $1.15\times$       & $1.11\times$       \\
     \midrule
-    \multirow{2}{*}{\textit{Audit $\rho$}}
+    $\rho$
        & GradAscent & $+0.560$           & $\mathbf{+0.869}$  & $+0.592$           \\
+    $\rho$
        & NPO        & $\mathbf{+0.657}$  & $+0.823$           & $+0.506$           \\
     \midrule
-    \multirow{2}{*}{\textit{$\rho$ 95\% CI}}
-       & GradAscent & $[+0.40,+0.69]$    & $[+0.81,+0.91]$    & $[+0.44,+0.71]$    \\
-       & NPO        & $[+0.52,+0.76]$    & $[+0.72,+0.89]$    & $[+0.34,+0.65]$    \\
+    CI
+       & GradAscent & $[.40,.69]$        & $[.81,.91]$        & $[.44,.71]$        \\
+    CI
+       & NPO        & $[.52,.76]$        & $[.72,.89]$        & $[.34,.65]$        \\
     \midrule
-    \multirow{2}{*}{\textit{top-10\% recall}}
+    top-10
        & GradAscent & $2/10$             & $6/10$             & $3/10$             \\
+    top-10
        & NPO        & $2/10$             & $\mathbf{8/10}$    & $\mathbf{5/10}$    \\
     \bottomrule
 \end{tabular}
-\caption{Cross-unlearner audit. Same $12$-dim geometric features, same RF protocol, same LOO over $n{=}100$ forget sets — only the unlearning algorithm changes. NPO produces ${\sim}10\text{--}14\%$ milder per-layer impact than GradAscent, but the audit recovers rank-significant predictions on both, with all six $\rho$ CIs strictly above zero.}
+\caption{NPO replication and cross-unlearner audit. Same $12$-dim geometric features, RF protocol, and LOO over $n{=}100$ forget sets; only the unlearning algorithm changes. NPO produces ${\sim}10\text{--}14\%$ milder impact than GradAscent, but all six $\rho$ CIs remain strictly above zero.}
 \label{tab:cross-unlearner}
 \end{table}
 
@@ -736,7 +778,7 @@ Influence-based selection is related \citep{koh2017understanding}, but it
 requires model gradients, scales poorly to 8B-parameter LLMs, and usually
 produces per-example scores rather than a forget-set-level impact profile. A
 separate data-first line predicts downstream model behaviour from dataset
-properties \citep{dang2024curious, ilyas2022datamodels, wang2024data,
+properties \citep{dang2024curious, ilyas2022datamodels,
 yao2020pyhessian}. We connect these threads by predicting the three-layer
 unlearning impact profile from forget-set geometry alone: the auditor uses
 only $50$ forget-set embeddings and $12$ scalar features, and serves as a
@@ -767,21 +809,93 @@ and NPO pair already covered.
 \section{Reproducibility Details}
 \label{app:repro}
 
-\paragraph{Data preparation.} WikiText-103 is filtered to $16{,}038$ passages of length $\geq 32$ tokens; embeddings come from \texttt{all-MiniLM-L6-v2} (no dimensionality reduction; the first $384$ dims are taken as-is). HDBSCAN parameters: \texttt{min\_cluster\_size}{=}$200$, \texttt{min\_samples}{=}$5$, Euclidean metric, EOM cluster selection. The resulting cluster-size distribution is $202 / 346 / 3{,}276$ (min/median/max). $100$ triplets are sampled with seed $42$, requiring \texttt{required\_cluster\_size}{=}$150$ and $50$ texts per split; per-triplet splits are guaranteed disjoint within a triplet.
+\paragraph{Data.} We filter WikiText-103 to $16{,}038$ passages with at least
+$32$ tokens. MiniLM-L6-v2 embeddings are used with all $384$ dimensions kept.
+\begin{center}
+\footnotesize
+\begin{tabular}{@{}ll@{}}
+    \toprule
+    Component & Setting \\
+    \midrule
+    HDBSCAN & min cluster $200$; min samples $5$ \\
+    Distance & Euclidean; EOM selection \\
+    Cluster sizes & $202 / 346 / 3{,}276$ (min/median/max) \\
+    Triplets & $100$ triplets, seed $42$ \\
+    Split size & $50$ texts each; disjoint within triplet \\
+    Eligibility & cluster size at least $150$ \\
+    \bottomrule
+\end{tabular}
+\end{center}
 
-\paragraph{Unlearning hyperparameters.} GradAscent in OpenUnlearning's \texttt{wikitext\_unlearn\_tofu\_aligned.sh}: \texttt{num\_train\_epochs}{=}$5$, \texttt{per\_device\_train\_batch\_size}{=}$8$, \texttt{gradient\_accumulation\_steps}{=}$8$ (effective batch $64$), \texttt{learning\_rate}{=}$1\!\times\!10^{-5}$ with linear schedule to zero, \texttt{warmup\_steps}{=}$1$, \texttt{weight\_decay}{=}$0.01$, \texttt{paged\_adamw\_32bit}, BF16. With $|\Df|{=}50$ and effective batch $64$, exactly $5$ optimiser steps fire (one per epoch); train-loss range $[-0.84, -0.62]$.
+\paragraph{Unlearning.} The OpenUnlearning script is:
+\begin{center}
+\footnotesize
+\texttt{wikitext\_unlearn\_tofu\_aligned.sh}
+\end{center}
+The run configuration is:
+\begin{center}
+\footnotesize
+\begin{tabular}{@{}ll@{}}
+    \toprule
+    Hyperparameter & Value \\
+    \midrule
+    Epochs & $5$ \\
+    Batch / accumulation & $8 / 8$ (effective batch $64$) \\
+    Learning rate & $1\!\times\!10^{-5}$, linear decay to zero \\
+    Warmup / weight decay & $1 / 0.01$ \\
+    Optimizer / precision & paged AdamW 32-bit / BF16 \\
+    \bottomrule
+\end{tabular}
+\end{center}
+With $|\Df|{=}50$ and effective batch $64$, exactly $5$ optimiser steps fire
+(one per epoch); train loss ranges from $-0.84$ to $-0.62$.
 
-\paragraph{Evaluation.} PPL is computed in BF16 with stride $512$ and context $1024$; each text is scored independently. Base-model PPL is cached once per (eval triplet, split) and re-used across the $100$ unlearned checkpoints. Long-format output: \texttt{ppl\_long.parquet} with one row per $(m, e, s, i)$.
+\paragraph{Evaluation.} PPL is computed in BF16 with stride $512$ and context
+$1024$; each text is scored independently. Base-model PPL is cached once per
+evaluation triplet and split, then reused across the $100$ unlearned
+checkpoints. The long-format output is \path{ppl_long.parquet}, with one row
+per $(m,e,s,i)$ tuple.
 
-\paragraph{Audit feature scripts.} \texttt{features/forget\_set.py} computes the $12$ scalars from a $50\!\times\!384$ embedding matrix in $<\!10$\,ms. Random Forest regression: \texttt{sklearn.ensemble.RandomForestRegressor} with \texttt{n\_estimators}{=}$200$, \texttt{min\_samples\_leaf}{=}$2$, \texttt{max\_depth}{=}\texttt{None}, \texttt{random\_state}{=}$0$, leave-one-out grouping over $n{=}100$ forget sets. Bootstrap: $10{,}000$ resamples of the $100$ LOO (true, predicted) pairs with seed $0$.
+\paragraph{Audit.} The feature script \path{features/forget_set.py} computes
+the $12$ scalars from a $50\!\times\!384$ embedding matrix in $<\!10$\,ms. The
+auditor uses scikit-learn's Random Forest regressor:
+\begin{center}
+\footnotesize
+\begin{tabular}{@{}ll@{}}
+    \toprule
+    Setting & Value \\
+    \midrule
+    Trees & $200$ \\
+    Minimum leaf size & $2$ \\
+    Maximum depth & None \\
+    Seed & $0$ \\
+    Evaluation & LOO over $100$ forget sets \\
+    Bootstrap & $10{,}000$ resamples, seed $0$ \\
+    \bottomrule
+\end{tabular}
+\end{center}
 
-\paragraph{Hardware.} All runs on a single H100 (80\,GB) node. End-to-end wall-clock: data prep $\approx 20$ min; $100$ unlearn runs $1$\,h\,$54$\,min; cross-PPL $6$\,h\,$11$\,min.
+\paragraph{Hardware.} All runs use a single H100 (80\,GB) node.
+\begin{center}
+\footnotesize
+\begin{tabular}{@{}ll@{}}
+    \toprule
+    Stage & Wall-clock \\
+    \midrule
+    Data preparation & $\approx 20$ min \\
+    $100$ unlearning runs & $1$ h $54$ min \\
+    Cross-PPL & $6$ h $11$ min \\
+    \bottomrule
+\end{tabular}
+\end{center}
 
 \section{Additional Sanity Tables}
 \label{app:tables}
 
-\paragraph{Per-cluster monotonicity.} Across all $10$ clusters, $\Lone(c){>}\Ltwo(c){>}\Lthree(c)$ holds without exception; the smallest within-cluster gap $\Lone{-}\Ltwo$ is $0.39$ (mildest cluster) and the largest is $0.71$ (storm). Per-cluster table is included in \texttt{corruption\_summary.json}.
+\paragraph{Per-cluster monotonicity.} Across all $10$ clusters,
+$\Lone(c){>}\Ltwo(c){>}\Lthree(c)$ holds without exception. The smallest
+within-cluster gap $\Lone{-}\Ltwo$ is $0.39$ (mildest cluster), and the largest
+is $0.71$ (storm). The full table is included in the released summary JSON.
 
-\paragraph{Coverage diagnostic.} The Pearson correlation between forget-set ball-coverage and $\Lthree$ is $r{=}{-}0.16$ (Spearman $\rho{=}{-}0.48$); a higher coverage of the embedding space corresponds to lower spillover, consistent with the rank-based mechanism in Sec.~\ref{sec:why-it-works}. Replacing ball coverage with a signed-projection or mutual-reachability variant is left for future work.
 
 \end{document}
