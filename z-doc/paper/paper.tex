@@ -63,8 +63,20 @@
 \twocolumn[
   \maketitle
   \begin{@twocolumnfalse}
+    % Abstract structure: problem, gap, method, key mechanism, results, claim.
     \begin{abstract}
-      Large language model (LLM) unlearning aims to remove target knowledge represented by a forget set $\Df$ through post-training updates, but its effect is not captured by a single forget/retain score. We propose evaluating unlearning as a \emph{three-layer impact profile}: intended degradation on the forget set, neighbour impact on held-out same-topic samples, and bystander impact on cross-topic samples. We denote these layers by $\Lforget$, $\Lneigh$, and $\Lbyst$. Using WikiText-103 triplets, $100$ GradAscent unlearning runs on Llama-3.1-8B-Instruct, and a $100\times100$ cross-PPL evaluation matrix, we measure $1.5$M per-sample perplexity ratios. The impact decays strictly across layers ($\Lforget{=}1.96\times$, $\Lneigh{=}1.32\times$, $\Lbyst{=}1.19\times$), but bystander impact remains measurable: $73.8\%$ of cross-topic samples have elevated PPL, and the profile varies substantially with the chosen forget set. We then formulate \emph{forget-set audit}: predicting the three-layer impact profile from forget-set geometry alone. A $12$-feature Random Forest auditor gives rank-significant predictions for all layers, with Spearman $\rho{=}0.56/0.87/0.59$ for $\Lforget/\Lneigh/\Lbyst$, enabling a cheap pre-screen before full unlearning evaluation. Replicating the full pipeline with NPO (a separate unlearning algorithm) yields independently rank-significant predictions ($\rho{=}0.66/0.82/0.51$, all CIs above zero), confirming the audit is unlearner-agnostic.
+      % Problem.
+      Large language model (LLM) unlearning must remove target knowledge represented by a forget set $\Df$ while limiting collateral damage to useful knowledge.
+      % Gap.
+      Existing evaluations usually collapse this requirement into aggregate forget/retain scores or compare algorithms on a fixed forget split, leaving unclear how unlearning impact spreads from the target set to neighbouring and unrelated text, and whether damaging forget sets can be identified before running unlearning.
+      % Method.
+      We construct $100$ WikiText-103 triplets, unlearn Llama-3.1-8B-Instruct with GradAscent for each forget set, and evaluate all checkpoints against all triplets in a $100\times100$ cross-PPL matrix, yielding $1.5$M per-sample perplexity ratios.
+      % Key mechanism.
+      We represent each run by a \emph{three-layer impact profile}: intended degradation on $\Df$ ($\Lforget$), neighbour impact on held-out same-topic samples ($\Lneigh$), and bystander impact on cross-topic samples ($\Lbyst$); we then predict this profile from a $12$-feature intrinsic geometry descriptor of $\Df$ using a leave-one-out Random Forest auditor.
+      % Results.
+      Impact decays across layers ($\Lforget{=}1.96\times$, $\Lneigh{=}1.32\times$, $\Lbyst{=}1.19\times$), but spillover does not vanish: $73.8\%$ of cross-topic samples have elevated PPL, and $\Lforget$ varies by $1.59\times$ across forget sets under the same algorithm and hyperparameters. The geometry-only auditor gives rank-significant predictions for all layers (Spearman $\rho{=}0.56/0.87/0.59$ for $\Lforget/\Lneigh/\Lbyst$), and an independent NPO replication remains rank-significant ($\rho{=}0.66/0.82/0.51$, all CIs above zero).
+      % Claim.
+      Unlearning side effects are partly a property of the forget set itself, and forget-set geometry can provide a cheap pre-screen for risky candidates before full unlearning evaluation.
     \end{abstract}
     \vspace{0.8em}
   \end{@twocolumnfalse}
@@ -76,96 +88,80 @@
 \section{Introduction}
 \label{sec:intro}
 
-Large language models increasingly need mechanisms for removing target
-knowledge after deployment. Copyright disputes, privacy regulation, user
-deletion requests, and the discovery of toxic, private, or copyrighted content
-in pretraining corpora all create cases where a model should stop reproducing
-or relying on specific knowledge represented by a forget set $\Df$
+% motivation
+After deployment, large language models are increasingly asked to remove
+specific knowledge. Copyright disputes, privacy regulation, user deletion
+requests, and the discovery of toxic, private, or copyrighted content in
+pretraining corpora all create cases where a model should stop reproducing or
+relying on a target forget set $\Df$
 \citep{maini2024tofu, shi2024muse, dorna2025openunlearning}. Since retraining
-from scratch is usually impractical, \emph{LLM unlearning} uses post-training
-updates to suppress this target knowledge while preserving the rest of the
-model. Modern benchmarks such as TOFU and MUSE therefore evaluate both sides of
-the requirement: forget the target knowledge, and preserve general utility.
+from scratch is usually impractical, \emph{LLM unlearning} aims to suppress
+this target knowledge through post-training updates while preserving the rest
+of the model. This preservation requirement is critical: in deployed systems, a
+successful deletion is not sufficient if the same update silently corrupts
+nearby facts, paraphrases, or unrelated capabilities.
 
-Unlearning, however, is not a purely local operation. The same gradient update
-that suppresses $\Df$ can also perturb nearby facts, paraphrases, and unrelated
-capabilities. Recent knowledge-hole probing work shows that benchmark-level
-utility scores can miss this collateral damage: the forget set may look removed
-while adjacent or latent knowledge has been silently corrupted \citep{ko2025probing}.
-For deployed systems, this matters because a successful deletion request is
-not enough; practitioners also need to know how much useful knowledge was
-damaged as a side effect.
+% gap
+Existing unlearning evaluations do not yet expose this side effect with enough
+resolution. Most studies report aggregate utility or a small set of post-hoc
+probes, which can miss the \emph{geometry} of unlearning damage: how impact
+changes as evaluation text moves from the forget set itself, to same-topic
+neighbours, to different-topic bystanders. Recent knowledge-hole probing work
+shows that benchmark-level utility can remain high even when adjacent or latent
+knowledge is corrupted \citep{ko2025probing}. At the same time, most benchmarks
+fix the forget split and compare algorithms, treating the choice of $\Df$ as
+given. This leaves a practical question unanswered: among many candidate forget
+sets, can we identify which ones are likely to cause broader damage before
+running expensive unlearning?
 
-Existing unlearning evaluations leave two gaps. First, they usually report
-aggregate utility or a small set of post-hoc probes, so the \emph{geometry} of
-unlearning impact remains unclear. We do not yet have a direct measurement
-of how damage changes as evaluation text moves from the forget set itself, to
-same-topic neighbours, to different-topic bystanders. In particular, it is
-unclear whether collateral damage decays cleanly with semantic distance or remains
-diffuse across unrelated content. Second, most benchmarks fix the forget split and compare unlearning algorithms.
-This treats the choice of $\Df$ as given, even though real deletion and curation
-pipelines may contain many candidate forget sets. Measuring the side effect of
-each candidate is expensive. We therefore ask a more data-first question: can we
-estimate which forget sets are likely to be damaging \emph{before} running
-unlearning?
+% method and insight
+We address this question with a controlled cross-evaluation framework for
+three-layer unlearning impact. We cluster WikiText-103 passages into semantic
+groups, sample $100$ candidate triplets, and split each triplet into disjoint
+train, validation, and test texts. For each triplet, the train split is the
+forget set $\Df$, while validation and test texts provide held-out same-topic
+neighbours. After unlearning Llama-3.1-8B-Instruct with a fixed GradAscent
+configuration, we evaluate every unlearned checkpoint on every triplet,
+yielding a cross-PPL matrix with $1.5$M per-sample perplexity ratios. This
+matrix separates \textbf{intended degradation} on the forget set ($\Lone$),
+\textbf{locality damage} on same-topic held-out text ($\Ltwo$), and
+\textbf{spillover damage} on unrelated-topic bystanders ($\Lthree$). The core
+insight is that unlearning impact is structured by semantic distance, but the
+chosen forget set also has an intrinsic geometry that helps predict how severe
+that impact will be.
 
-We study unlearning impact through a controlled WikiText-103 triplet
-schema. We cluster passages into semantic groups, sample $100$ candidate
-triplets, and split each triplet into disjoint train, validation, and test
-texts. For each triplet, the train split is the forget set $\Df$; the validation
-and test splits provide held-out same-topic neighbours. We unlearn
-Llama-3.1-8B-Instruct with a fixed GradAscent configuration. We then evaluate
-every unlearned checkpoint on every triplet, yielding $1.5$M per-sample
-perplexity ratios.
+% results
+Our measurements show both distance decay and persistent collateral damage.
+Across the cross-PPL matrix, impact decreases strictly across the three layers
+($\Lone{>}\Ltwo{>}\Lthree$), yet it does not vanish: $\Lthree$ remains above the
+base model on $73.8\%$ of cross-topic samples evaluated against unrelated
+clusters. Damage magnitude also varies substantially with the chosen forget
+set, even under the same algorithm and hyperparameters; $\Lone$ varies by
+$1.59\times$ across the $100$ candidates. We then formulate \emph{forget-set
+audit}: predicting the three-layer impact profile from forget-set geometry
+alone. Using a $12$-dimensional intrinsic geometry descriptor computed from the
+$50$ forget-set embeddings, a Random Forest regressor obtains rank-significant
+predictions under leave-one-out cross-validation, with Spearman correlations of
+$0.56$, $0.87$, and $0.59$ for $\Lone$, $\Ltwo$, and $\Lthree$; all $95\%$
+bootstrap confidence intervals exclude zero. The auditor runs in seconds and
+serves as a pre-screen for forget-set selection before full unlearning.
 
-This matrix lets us define and measure a \emph{three-layer impact profile}.
-For an unlearned checkpoint $m$ and evaluation triplet $e$, $\Lone$ is
-\textbf{intended degradation}: the diagonal train split ($m{=}e$), i.e., the
-requested deletion target itself. $\Ltwo$ is \textbf{locality damage}: the
-diagonal validation/test splits ($m{=}e$), i.e., unseen same-cluster neighbours
-that should ideally be preserved. $\Lthree$ is \textbf{spillover damage}:
-off-diagonal test splits ($m{\neq}e$), i.e., unrelated-topic bystanders. Across
-$1.5$M evaluations, impact decays strictly
-($\Lone{>}\Ltwo{>}\Lthree$), but it does not disappear: $\Lthree$ remains above
-the base model on $73.8\%$ of cross-topic samples. Moreover, under the same
-algorithm and hyperparameters, the magnitude of damage changes substantially
-with the chosen forget set; $\Lone$ varies by $1.59\times$ across the $100$
-candidates.
+% contributions
+Our contributions are:
+(1) We introduce a measurement framework for three-layer unlearning impact,
+separating intended forget-set degradation, same-topic locality damage, and
+cross-topic spillover damage within a unified cross-PPL matrix.
+(2) We provide quantitative evidence that unlearning impact decays with
+semantic distance, yet collateral damage remains non-zero even far from the
+forget set: $\Lthree > 1$ on $73.8\%$ of cross-topic samples evaluated against
+unrelated clusters.
+(3) We formulate \emph{forget-set audit}, which predicts the three-layer impact
+profile from forget-set geometry alone. A $12$-feature Random Forest auditor
+achieves rank-significant predictions across all three layers, including
+$\rho = 0.87$ and $R^2 = 0.74$ for locality damage, enabling cheap screening
+before full unlearning.
 
-We then turn this observation into a \emph{forget-set audit}. Inspired by
-data-first prediction of model behaviour \citep{dang2024curious}, the audit
-uses only the candidate forget set before unlearning. From the $50$ forget-set
-embeddings we compute a $12$-dimensional intrinsic geometry descriptor
-(spread, pairwise similarity, centroid scale, effective rank, isotropy, and
-related statistics). Under leave-one-out cross-validation, a Random Forest
-regressor predicts the three-layer impact profile from these features
-alone. The resulting rankings are significant for all layers, with Spearman
-correlations of $0.56$, $0.87$, and $0.59$ for $\Lone$, $\Ltwo$, and $\Lthree$;
-all $95\%$ bootstrap confidence intervals exclude zero. The auditor runs in
-seconds and is intended as a pre-screen for forget-set selection, not as a
-replacement for the final unlearning evaluation.
-
-\paragraph{Contributions.}
-\begin{enumerate}
-    \setlength\itemsep{0.2em}
-    \item We introduce a measurement framework for three-layer unlearning
-    impact, separating intended forget-set degradation, same-topic locality
-    damage, and cross-topic spillover damage in a single cross-PPL matrix.
-    \item We provide quantitative evidence that unlearning impact decays
-    with semantic distance but collateral damage remains non-zero far from the forget set:
-    $\Lthree{>}1$ on $73.8\%$ of cross-topic samples, even when evaluated
-    against unrelated clusters.
-    \item We show that side-effect magnitude is partly a property of the
-    forget set itself. With algorithm and hyperparameters fixed, $\Lone$ varies
-    by $1.59\times$ across $100$ candidate forget sets.
-    \item We formulate \emph{forget-set audit}: predicting the three-layer
-    impact profile from forget-set geometry alone. A $12$-feature Random
-    Forest auditor achieves rank-significant predictions for all three
-    layers, including $\rho{=}0.87$ and $R^2{=}0.74$ for locality damage,
-    enabling cheap screening before full unlearning.
-\end{enumerate}
-
-\paragraph{Roadmap.}
+% roadmap
 Sec.~\ref{sec:problem} formalises the three-layer impact and audit problems.
 Sec.~\ref{sec:setup} describes the triplet schema, unlearning procedure, and
 cross-PPL matrix. Sec.~\ref{sec:three-layer} reports the three-layer impact
@@ -179,75 +175,91 @@ limitations and outlook. Sec.~\ref{sec:related} closes with related work.
 \section{Problem Formulation}
 \label{sec:problem}
 
-Let $f$ be the base model and let $\mathcal{U}$ be a fixed post-training
-unlearning procedure. A forget set $\Df$ operationally represents the target
-knowledge to be removed, and applying unlearning yields
-\begin{equation}
-    f_{\Df}' \;=\; \mathcal{U}(f, \Df).
-\end{equation}
-Our goal is not to construct adversarial or corrupted evaluation data. Instead,
-we ask how the impact of this update spreads from the intended target to
-nearby and unrelated knowledge, and whether that impact can be predicted before
-running $\mathcal{U}$.
-
-\paragraph{Three-layer evaluation sets.}
-For each candidate $\Df$, we construct two disjoint evaluation sets:
-$\mathcal{D}_{N}$, held-out same-topic neighbours of $\Df$, and
-$\mathcal{D}_{B}$, cross-topic bystanders. These sets satisfy
+% experimental object
+\paragraph{Experimental objects.}
+Let $M_{\theta_0}$ denote the original language model before unlearning, and
+let $\mathcal{U}$ be a fixed post-training unlearning algorithm. We consider a
+collection of candidate semantic groups
+$\mathcal{G}=\{G_i\}_{i=1}^{N}$, where each group contains passages about a
+coherent topic. Each group is split into three disjoint subsets:
+$G_i^{\mathrm{tr}}$, $G_i^{\mathrm{val}}$, and $G_i^{\mathrm{te}}$. For
+candidate $i$, the forget set and resulting unlearned checkpoint are
 \begin{align}
-    \Df \cap \mathcal{D}_{N} &= \emptyset,\\
-    \Df \cap \mathcal{D}_{B} &= \emptyset,\\
-    \mathcal{D}_{N} \cap \mathcal{D}_{B} &= \emptyset,\\
-    \mathrm{sim}(\mathcal{D}_{N}, \Df) &\ge \gamma,\\
-    \mathrm{sim}(\mathcal{D}_{B}, \Df) &\le \delta,\\
-    \max_{S\in\{\Df,\mathcal{D}_{N},\mathcal{D}_{B}\}}\PPL_f(S) &\le \tau,\\
-    \min_{S\in\{\Df,\mathcal{D}_{N},\mathcal{D}_{B}\}}|S| &\ge k.
+    \Df^{(i)} &= G_i^{\mathrm{tr}},\\
+    M_{\theta_i} &= \mathcal{U}(M_{\theta_0}, \Df^{(i)}).
 \end{align}
-Here $\mathrm{sim}(\cdot,\cdot)$ measures semantic relatedness between sets,
-$\gamma$ enforces same-topic neighbourhood for $\mathcal{D}_{N}$, $\delta$
-enforces cross-topic separation for $\mathcal{D}_{B}$, $\tau$ keeps the
-evaluation text within the base model's linguistic support, and $k$ controls
-coverage.
+The experiment fixes $M_{\theta_0}$ and $\mathcal{U}$, varies only
+$\Df^{(i)}$, and compares the resulting checkpoints across the same semantic
+groups.
 
+% measurement metric
+\paragraph{Measurement metric.}
+For an evaluation passage $x$, we measure unlearning impact by the
+base-normalised perplexity ratio
+\begin{align}
+    r_i(x)
+    &=
+    \frac{\PPL(M_{\theta_i}, x)}
+         {\PPL(M_{\theta_0}, x)},\\
+    R_i(S)
+    &=
+    \exp\!\left(
+    \frac{1}{|S|}\sum_{x\in S}\log r_i(x)
+    \right).
+\end{align}
+A value $r_i(x)>1$ means that unlearning $\Df^{(i)}$ makes the model assign
+lower likelihood to $x$ than the original model did. For a set of passages
+$S$, $R_i(S)$ is the geometric mean ratio. Normalising by $M_{\theta_0}$ makes
+measurements comparable across
+passages with different base difficulty.
+
+% three-layer impact
 \paragraph{Three-layer impact profile.}
-For a sample $x$, we measure post-unlearning impact by the base-normalised PPL
-ratio
-\begin{equation}
-    r_{\Df}(x) \;=\;
-    \frac{\PPL_{f_{\Df}'}(x)}{\PPL_f(x)}.
-\end{equation}
-The impact profile of $\Df$ is the vector
-\begin{equation}
-    I(\Df)
-    =
-    \left(
-    \Lforget(\Df),\;
-    \Lneigh(\Df),\;
-    \Lbyst(\Df)
-    \right),
-\end{equation}
-where
+For each candidate forget set $\Df^{(i)}$, we separate impact into three
+semantic layers. Let
+$\mathcal{N}^{(i)}=G_i^{\mathrm{val}}\cup G_i^{\mathrm{te}}$ be the held-out
+same-topic neighbour set, and let
+$\mathcal{B}^{(i)}=\bigcup_{j\neq i}G_j^{\mathrm{te}}$ be the cross-topic
+bystander set. The three-layer impact profile is
 \begin{align}
-    \Lforget(\Df) &= \geomean_{x\in\Df}\, r_{\Df}(x),\\
-    \Lneigh(\Df) &= \geomean_{x\in\mathcal{D}_{N}}\, r_{\Df}(x),\\
-    \Lbyst(\Df) &= \geomean_{x\in\mathcal{D}_{B}}\, r_{\Df}(x).
+    \Lone^{(i)} &= R_i(G_i^{\mathrm{tr}})
+    &&\text{(intended degradation)},\\
+    \Ltwo^{(i)} &= R_i(\mathcal{N}^{(i)})
+    &&\text{(locality damage)},\\
+    \Lthree^{(i)} &= R_i(\mathcal{B}^{(i)})
+    &&\text{(spillover damage)},\\
+    \mathbf{y}^{(i)}
+    &=\left(\Lone^{(i)},\Ltwo^{(i)},\Lthree^{(i)}\right).
 \end{align}
-These are the intended degradation, neighbour impact, and bystander impact,
-respectively. High $\Lforget$ is the intended forgetting signal; high
-$\Lneigh$ or $\Lbyst$ is collateral damage.
+High $\Lone$ is the intended forgetting signal; high $\Ltwo$ or $\Lthree$
+indicates collateral damage. In later tables we use the mnemonic aliases
+$\Lforget,\Lneigh,\Lbyst$ for these same three layers.
 
+% forget-set audit
 \paragraph{Forget-set audit.}
-Measuring $I(\Df)$ requires running $\mathcal{U}$ and evaluating $f_{\Df}'$.
-The audit problem forbids this at prediction time: given only features
-$\phi(\Df)$ of the candidate forget set, learn a predictor
+Measuring $\mathbf{y}^{(i)}$ requires running $\mathcal{U}$ and evaluating the
+resulting checkpoint. We formulate \emph{forget-set audit} as a
+pre-unlearning prediction task: given only the candidate forget set
+$\Df^{(i)}$, predict its future three-layer impact profile. Let
+$\phi(\Df^{(i)})\in\R^d$ be an intrinsic descriptor computed from the
+forget-set passages. An auditor
+$A_{\psi}: \R^d \rightarrow \R^3$ is trained with the objective
 \begin{equation}
-    h(\phi(\Df)) \;\approx\; I(\Df),
+    \hat{\psi}
+    =
+    \argmin_{\psi}
+    \sum_{i=1}^{N}
+    \left\|
+    A_{\psi}\!\left(\phi(\Df^{(i)})\right)
+    -
+    \mathbf{y}^{(i)}
+    \right\|_2^2.
 \end{equation}
-with no access to $f_{\Df}'$, $\mathcal{D}_{N}$, or $\mathcal{D}_{B}$ except
-when producing held-out evaluation labels. We evaluate $h$ primarily as a
-ranking tool over candidate forget sets, so the practical objective is to rank
-candidates by predicted impact profile before spending GPU time on full
-unlearning and cross-evaluation.
+At prediction time, the auditor has no access to $M_{\theta_i}$ or to
+post-unlearning evaluation results. Its practical goal is to estimate or rank
+which candidate forget sets are likely to induce larger intended degradation,
+same-topic locality damage, or cross-topic spillover damage before paying for
+full unlearning and cross-evaluation.
 
 % ============================================================================
 % 3. Experiment Setup
