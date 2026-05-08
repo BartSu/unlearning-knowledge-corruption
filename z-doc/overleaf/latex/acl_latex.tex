@@ -144,6 +144,15 @@
 \section{Introduction}
 \label{sec:intro}
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig1.png}
+\caption{\textbf{Two-stage framework.}
+\textbf{(1)} \emph{Measure three-layer unlearning impact}: each candidate $\Df$ is unlearned and the resulting checkpoint is evaluated by base-normalised PPL on three semantic layers --- $\Lone$ forget, $\Ltwo$ same-topic neighbours, $\Lthree$ off-target bystanders --- yielding a layer score per layer (geo-mean of $r$). Impact decays with semantic distance ($\Lone{>}\Ltwo{>}\Lthree$).
+\textbf{(2)} \emph{Audit risk before unlearning}: a forget-set geometry descriptor $\phi(\Df)$ is fed to a cheap predictor that outputs the predicted three-layer profile, enabling pre-screening of candidate forget sets without running unlearning.}
+\label{fig:hero}
+\end{figure}
+
 % motivation
 After deployment, large language models are increasingly asked to remove
 specific knowledge. Copyright disputes, privacy regulation, user deletion
@@ -181,8 +190,7 @@ running expensive unlearning?
 \end{tcolorbox}
 
 % method and insight
-We address this question with a controlled cross-evaluation framework for
-three-layer unlearning impact. We cluster WikiText-103 passages into semantic
+We address this question in two stages (Fig.~\ref{fig:hero}): measuring three-layer unlearning impact under a controlled cross-evaluation matrix, then auditing the predicted impact profile from forget-set geometry alone. We cluster WikiText-103 passages into semantic
 groups, sample $100$ candidate triplets, and split each triplet into disjoint
 train, validation, and test texts. For each triplet, the train split is the
 forget set $\Df$, while validation and test texts provide held-out same-topic
@@ -368,13 +376,13 @@ summarises the construction.
 \put(120,42){\vector(0,-1){8}}
 \put(202,42){\vector(0,-1){8}}
 \scriptsize
-\put(0,0){\framebox(76,34){\shortstack{Forget set\\\texttt{train}\\$50$ texts}}}
-\put(82,0){\framebox(76,34){\shortstack{Neighbour\\\texttt{val/test}\\same triplet}}}
-\put(164,0){\framebox(76,34){\shortstack{Bystander\\other \texttt{test}\\off-diagonal}}}
+\put(0,0){\framebox(76,34){\shortstack{Forget set\\$\Lone$}}}
+\put(82,0){\framebox(76,34){\shortstack{Neighbours\\$\Ltwo$}}}
+\put(164,0){\framebox(76,34){\shortstack{Bystanders\\$\Lthree$}}}
 \end{picture}}
 \vspace{0.35em}
 \refstepcounter{figure}\label{fig:triplet-schema}
-\parbox{0.96\columnwidth}{\small\textbf{Figure~\thefigure:} Triplet schema. WikiText-103 passages are filtered, embedded, and clustered; each non-noise semantic cluster yields $10$ triplets. The train split is the forget set, validation/test splits are same-topic neighbours, and test splits from triplets in other clusters serve as cross-topic bystanders in off-diagonal evaluation.}
+\parbox{0.96\columnwidth}{\small\textbf{Figure~\thefigure:} Triplet schema. WikiText-103 passages are filtered, embedded, and clustered; each non-noise semantic cluster yields $10$ triplets. Each triplet's three disjoint $50$-text splits instantiate the three layers: the train split is the forget set ($\Lone$), the val/test splits are same-topic neighbours ($\Ltwo$), and test splits from triplets in other clusters serve as cross-topic bystanders ($\Lthree$).}
 \end{center}
 
 For each non-noise cluster we independently sample $10$ \emph{triplets}, giving
@@ -396,14 +404,12 @@ The within-triplet disjointness gives a clean separation between the unlearning
 target, same-topic neighbour knowledge, and off-diagonal corruption probes. Triplets are sampled independently, so
 two triplets drawn from the same cluster may reuse passages; triplets from
 different clusters are disjoint by construction because HDBSCAN assigns each
-passage to a single cluster. In the cross-PPL matrix, the matched validation
-and test splits instantiate $\Ltwo$, while off-diagonal test splits instantiate
-$\Lthree$.
+passage to a single cluster.
 
 \subsection{Unlearning Procedure}
 \label{sec:unlearn}
 
-We unlearn Llama-3.1-8B-Instruct \citep{dubey2024llama3} with the GradAscent objective \citep{jang2023knowledge}: for each $\Df$ we maximise the negative log-likelihood on $\Df$ while keeping a small retain-loss term on the same-cluster validation split. Hyperparameters follow defaults from OpenUnlearning \citep{dorna2025openunlearning}: learning rate $1\!\times\!10^{-5}$ with linear decay, paged AdamW (32-bit), per-device batch size $8$ with gradient accumulation $8$ (effective batch $64$), $5$ epochs (resulting in $5$ optimiser steps because $|\Df|{=}50<64$), warmup of $1$ step, weight decay $0.01$, BF16. All runs use a single H100 80\,GB. Each unlearn run takes $\approx 75$\,s wall-clock; the full $n{=}100$ sweep finishes in $1$\,h\,$54$\,min and produces $\approx 1.5$\,TB of checkpoints ($\approx 15$\,GB each). Train loss converges in $[-0.84, -0.62]$ (negative is expected for GradAscent).
+We unlearn Llama-3.1-8B-Instruct \citep{dubey2024llama3} with the GradAscent objective \citep{jang2023knowledge}: for each $\Df$ we maximise the negative log-likelihood on $\Df$ while keeping a small retain-loss term on the same-cluster validation split. Hyperparameters follow defaults from OpenUnlearning \citep{dorna2025openunlearning}: learning rate $1\!\times\!10^{-5}$ with linear decay, paged AdamW (32-bit), per-device batch size $8$ with gradient accumulation $8$ (effective batch $64$), $5$ epochs (resulting in $5$ optimiser steps because $|\Df|{=}50<64$), warmup of $1$ step, weight decay $0.01$, BF16. All runs use a single H100 80\,GB and produce $\approx 1.5$\,TB of checkpoints ($\approx 15$\,GB each).
 
 \subsection{Cross-PPL Evaluation Protocol}
 \label{sec:matrix}
