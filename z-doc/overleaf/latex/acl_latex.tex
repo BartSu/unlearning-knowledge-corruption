@@ -35,6 +35,7 @@
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
 \usepackage{multirow}
+\usepackage[most]{tcolorbox}
 
 % Shared math notation for the paper.
 \newcommand{\R}{\mathbb{R}}
@@ -168,6 +169,16 @@ fix the forget split and compare algorithms, treating the choice of $\Df$ as
 given. This leaves a practical question unanswered: among many candidate forget
 sets, can we identify which ones are likely to cause broader damage before
 running expensive unlearning?
+
+\begin{tcolorbox}[
+    colback=gray!10, colframe=gray!50,
+    arc=2mm, boxrule=0.4pt,
+    left=6pt, right=6pt, top=4pt, bottom=4pt,
+]
+\textbf{Research questions.}\\[2pt]
+\textbf{RQ1.} Does collateral damage vary systematically with the choice of forget set?\\
+\textbf{RQ2.} If yes, can it be predicted from forget-set geometry alone, before running unlearning?
+\end{tcolorbox}
 
 % method and insight
 We address this question with a controlled cross-evaluation framework for
@@ -566,9 +577,13 @@ texts, retain texts, gradients, or model weights.
 \paragraph{Target.} The output is a three-dimensional prediction for the
 future impact profile: geo-mean $\log r$ on $\Lone$, $\Ltwo$, and $\Lthree$.
 Equivalently, exponentiating each coordinate gives the predicted layer-level
-PPL ratio. We use audit primarily for \emph{ranking}: identifying which
-candidate forget sets are likely to produce larger intended degradation,
-same-topic locality damage, or cross-topic spillover.
+PPL ratio. We evaluate the auditor under two complementary task views:
+(i) \emph{regression} (numeric fit) --- how close the predicted geo-mean $\log r$
+is to the true value, scored by held-out $R^2$ and MAE against the LOO-mean
+baseline; and (ii) \emph{ranking} --- whether the auditor correctly orders the
+$100$ candidate forget sets by their future damage on each layer, scored by
+Spearman $\rho$ with bootstrap CIs. Regression is the underlying learning
+objective; ranking is the practical use case (pre-screen the riskiest $\Df$).
 
 \paragraph{Training protocol.} We train one Random Forest regressor per layer
 ($n_{\text{est}}{=}200$, minimum leaf size $2$, unbounded depth, seed $0$).
@@ -763,45 +778,21 @@ A causal study --- e.g.\ deliberately constructing $\Df$ with prescribed isotrop
 
 The audit is most reliable for $\Ltwo$ and least reliable for $\Lthree$ in absolute terms (RF MAE $0.019$ vs.\ baseline $0.022$ --- a $14\%$ improvement, with $\rho{=}0.59$ and $95\%$ CI $[+0.44, +0.71]$). Two reasons: (i) $\Lthree$ has a very narrow dynamic range ($1.13\times$ between worst and mildest cluster), so absolute prediction is intrinsically hard; and (ii) cross-cluster spillover plausibly depends on \emph{evaluation-side} geometry (where the neighbours of $\Df$ are in the broader embedding space), which the forget-set-only descriptor cannot see. Top-1 identification is unstable in the same-cluster regime (multiple triplets within a cluster have very similar predicted scores), which is why we frame the auditor as a top-$k$ screen rather than a precise ranker.
 
-\subsection{Ethical and Practical Considerations}
-\label{sec:ethics}
-
-A pre-screen that ranks forget sets by side-effect could in principle be misused to \emph{target} forget sets that maximise damage (e.g.\ to degrade a competitor's model via a poisoned removal request). We see two mitigations: (i) the auditor itself is not a generative tool --- it scores, not produces, candidates; (ii) the failure mode is bounded by the underlying unlearning algorithm, which already has well-known damage profiles independent of our score. We recommend that practical deployments couple the auditor with a downstream gate (the actual unlearn + cross-PPL), as in the screen-then-run workflow of Sec.~\ref{sec:positioning}.
-
 % ============================================================================
 % 7. Conclusion
 % ============================================================================
 \section{Conclusion}
 \label{sec:conclusion}
 
-LLM unlearning is not fully described by whether the requested forget set is
-removed. The same update can damage held-out same-topic knowledge and
-unrelated-topic bystanders, so we formalised unlearning impact as a
-three-layer profile: intended forget-set degradation ($\Lone$), same-topic
-locality damage ($\Ltwo$), and cross-topic spillover damage ($\Lthree$). Using
-WikiText-103 triplets, $100$ candidate forget sets, Llama-3.1-8B-Instruct, and
-a fixed GradAscent unlearner, we built a $1.5$M-sample cross-PPL matrix and
-then asked whether this profile can be predicted from forget-set geometry
-alone.
-
-The results show that impact is structured but not local. Damage decays across
-the three layers, with geo-mean ratios of $1.96\times$, $1.32\times$, and
-$1.19\times$, yet spillover remains measurable: $73.8\%$ of cross-topic
-samples have elevated PPL. The forget set itself also matters, with $\Lone$
-varying by $1.59\times$ under fixed algorithm and hyperparameters. A
-$12$-feature Random Forest auditor predicts all three layers with
-rank-significant leave-one-out correlations, including $\rho{=}0.87$ and
-$R^2{=}0.74$ for locality damage; the same audit remains rank-significant on
-NPO.
-
-These findings support a \emph{screen-then-run} workflow: cheaply rank
-candidate forget sets by predicted risk, then run full unlearning and
-cross-evaluation on the candidates that matter most. The audit does not replace
-the final evaluation, but it makes forget-set selection less blind and less
-expensive. Future work should scale across models and unlearners, add QA-style
-utility metrics, enrich the geometry descriptor, and construct controlled
-forget sets to test which properties causally drive locality and spillover
-damage.
+We formalised unlearning impact as a three-layer profile ($\Lone$ forget,
+$\Ltwo$ locality, $\Lthree$ spillover) and showed that, under fixed algorithm
+and hyperparameters, the profile depends systematically on the forget set:
+spillover does not vanish even at cross-topic distance, and damage magnitude
+varies measurably across candidates. A $12$-dimensional Random Forest auditor
+predicts the profile from forget-set geometry alone, and the same conclusion
+holds under an independent NPO replication. This supports a screen-then-run
+workflow, cheap pre-screen of candidate forget sets, full unlearning only on
+the riskiest.
 
 % ============================================================================
 % 8. Related Work
