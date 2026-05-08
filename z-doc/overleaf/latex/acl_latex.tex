@@ -45,9 +45,6 @@
 \newcommand{\Lone}{L_1}
 \newcommand{\Ltwo}{L_2}
 \newcommand{\Lthree}{L_3}
-\newcommand{\Lforget}{L_F}
-\newcommand{\Lneigh}{L_N}
-\newcommand{\Lbyst}{L_B}
 \DeclareMathOperator*{\argmin}{arg\,min}
 \DeclareMathOperator*{\argmax}{arg\,max}
 \newcommand{\geomean}{\mathrm{geo}}
@@ -136,9 +133,9 @@
       % Method.
       We construct $100$ WikiText-103 triplets, unlearn Llama-3.1-8B-Instruct with GradAscent for each forget set, and evaluate all checkpoints against all triplets in a $100\times100$ cross-PPL matrix, yielding $1.5$M per-sample perplexity ratios.
       % Key mechanism.
-      We represent each run by a \emph{three-layer impact profile}: intended degradation on $\Df$ ($\Lforget$), neighbour impact on held-out same-topic samples ($\Lneigh$), and bystander impact on cross-topic samples ($\Lbyst$); we then predict this profile from a $12$-feature intrinsic geometry descriptor of $\Df$ using a leave-one-out Random Forest auditor.
+      We represent each run by a \emph{three-layer impact profile}: intended degradation on $\Df$ ($\Lone$), neighbour impact on held-out same-triplet samples ($\Ltwo$), and bystander impact on off-diagonal test samples ($\Lthree$); we then predict this profile from a $12$-feature intrinsic geometry descriptor of $\Df$ using a leave-one-out Random Forest auditor.
       % Results.
-      Impact decays across layers ($\Lforget{=}1.96\times$, $\Lneigh{=}1.32\times$, $\Lbyst{=}1.19\times$), but spillover does not vanish: $73.8\%$ of cross-topic samples have elevated PPL, and $\Lforget$ varies by $1.59\times$ across forget sets under the same algorithm and hyperparameters. The geometry-only auditor gives rank-significant predictions for all layers (Spearman $\rho{=}0.56/0.87/0.59$ for $\Lforget/\Lneigh/\Lbyst$), and an independent NPO replication remains rank-significant ($\rho{=}0.66/0.82/0.51$, all CIs above zero).
+      Impact decays across layers ($\Lone{=}1.96\times$, $\Ltwo{=}1.32\times$, $\Lthree{=}1.19\times$), but spillover does not vanish: $73.8\%$ of off-diagonal bystander samples have elevated PPL, and $\Lone$ varies by $1.59\times$ across forget sets under the same algorithm and hyperparameters. The geometry-only auditor gives rank-significant predictions for all layers (Spearman $\rho{=}0.56/0.87/0.59$ for $\Lone/\Ltwo/\Lthree$), and an independent NPO replication remains rank-significant ($\rho{=}0.66/0.82/0.51$, all CIs above zero).
       % Claim.
       Unlearning side effects are partly a property of the forget set itself, and forget-set geometry can provide a cheap pre-screen for risky candidates before full unlearning evaluation.
 \end{abstract}
@@ -164,7 +161,7 @@ Existing unlearning evaluations do not yet expose this side effect with enough
 resolution. Most studies report aggregate utility or a small set of post-hoc
 probes, which can miss the \emph{geometry} of unlearning damage: how impact
 changes as evaluation text moves from the forget set itself, to same-topic
-neighbours, to different-topic bystanders. Recent knowledge-hole probing work
+neighbours, to off-target bystanders. Recent knowledge-hole probing work
 shows that benchmark-level utility can remain high even when adjacent or latent
 knowledge is corrupted \citep{ko2025probing}. At the same time, most benchmarks
 fix the forget split and compare algorithms, treating the choice of $\Df$ as
@@ -183,7 +180,7 @@ configuration, we evaluate every unlearned checkpoint on every triplet,
 yielding a cross-PPL matrix with $1.5$M per-sample perplexity ratios. This
 matrix separates \textbf{intended degradation} on the forget set ($\Lone$),
 \textbf{locality damage} on same-topic held-out text ($\Ltwo$), and
-\textbf{spillover damage} on unrelated-topic bystanders ($\Lthree$). The core
+\textbf{spillover damage} on off-diagonal bystanders ($\Lthree$). The core
 insight is that unlearning impact is structured by semantic distance, but the
 chosen forget set also has an intrinsic geometry that helps predict how severe
 that impact will be.
@@ -192,8 +189,7 @@ that impact will be.
 Our measurements show both distance decay and persistent collateral damage.
 Across the cross-PPL matrix, impact decreases strictly across the three layers
 ($\Lone{>}\Ltwo{>}\Lthree$), yet it does not vanish: $\Lthree$ remains above the
-base model on $73.8\%$ of cross-topic samples evaluated against unrelated
-clusters. Damage magnitude also varies substantially with the chosen forget
+base model on $73.8\%$ of off-diagonal bystander samples. Damage magnitude also varies substantially with the chosen forget
 set, even under the same algorithm and hyperparameters; $\Lone$ varies by
 $1.59\times$ across the $100$ candidates. We then formulate \emph{forget-set
 audit}: predicting the three-layer impact profile from forget-set geometry
@@ -208,11 +204,10 @@ serves as a pre-screen for forget-set selection before full unlearning.
 Our contributions are:
 (1) We introduce a measurement framework for three-layer unlearning impact,
 separating intended forget-set degradation, same-topic locality damage, and
-cross-topic spillover damage within a unified cross-PPL matrix.
+off-diagonal spillover damage within a unified cross-PPL matrix.
 (2) We provide quantitative evidence that unlearning impact decays with
 semantic distance, yet collateral damage remains non-zero even far from the
-forget set: $\Lthree > 1$ on $73.8\%$ of cross-topic samples evaluated against
-unrelated clusters.
+forget set: $\Lthree > 1$ on $73.8\%$ of off-diagonal bystander samples.
 (3) We formulate \emph{forget-set audit}, which predicts the three-layer impact
 profile from forget-set geometry alone. A $12$-feature Random Forest auditor
 achieves rank-significant predictions across all three layers, including
@@ -278,8 +273,8 @@ passages with different base difficulty.
 For each candidate forget set $\Df^{(i)}$, we separate impact into three
 semantic layers. Let
 $\mathcal{N}^{(i)}=G_i^{\mathrm{val}}\cup G_i^{\mathrm{te}}$ be the held-out
-same-topic neighbour set, and let
-$\mathcal{B}^{(i)}=\bigcup_{j\neq i}G_j^{\mathrm{te}}$ be the cross-topic
+same-triplet neighbour set, and let
+$\mathcal{B}^{(i)}=\bigcup_{j\neq i}G_j^{\mathrm{te}}$ be the off-diagonal
 bystander set. The three-layer impact profile is
 \begin{align}
     \Lone^{(i)} &= R_i(G_i^{\mathrm{tr}})
@@ -287,13 +282,12 @@ bystander set. The three-layer impact profile is
     \Ltwo^{(i)} &= R_i(\mathcal{N}^{(i)})
     &&\text{(locality damage)},\\
     \Lthree^{(i)} &= R_i(\mathcal{B}^{(i)})
-    &&\text{(spillover damage)},\\
+    &&\text{(off-diagonal spillover)},\\
     \mathbf{y}^{(i)}
     &=\left(\Lone^{(i)},\Ltwo^{(i)},\Lthree^{(i)}\right).
 \end{align}
 High $\Lone$ is the intended forgetting signal; high $\Ltwo$ or $\Lthree$
-indicates collateral damage. In later tables we use the mnemonic aliases
-$\Lforget,\Lneigh,\Lbyst$ for these same three layers.
+indicates collateral damage.
 
 % forget-set audit
 \paragraph{Forget-set audit.}
@@ -318,19 +312,27 @@ $A_{\psi}: \R^d \rightarrow \R^3$ is trained with the objective
 At prediction time, the auditor has no access to $M_{\theta_i}$ or to
 post-unlearning evaluation results. Its practical goal is to estimate or rank
 which candidate forget sets are likely to induce larger intended degradation,
-same-topic locality damage, or cross-topic spillover damage before paying for
+same-topic locality damage, or off-diagonal spillover damage before paying for
 full unlearning and cross-evaluation.
 
 % ============================================================================
-% 3. Experiment Setup
+% 3. Experimental Setup
 % ============================================================================
-\section{Experiment Setup}
+\section{Experimental Setup}
 \label{sec:setup}
 
 \subsection{Triplet Schema}
 \label{sec:triplets}
 
-We start from WikiText-103 \citep{merity2017pointer}, filter to $16{,}038$ usable passages, and embed them with \texttt{all-MiniLM-L6-v2} \citep{wang2020minilmv2} into $384$-dim vectors. HDBSCAN \citep{campello2013density} with \texttt{min\_cluster\_size}{=}$200$, \texttt{min\_samples}{=}$5$, Euclidean metric, and EOM cluster selection produces $10$ semantic clusters (covering recurring WikiText topics: Federer, Harry Potter, tennis matches, etc.) plus a noise pool of $9{,}198$ ($57.4\%$). Fig.~\ref{fig:triplet-schema} summarises the construction.
+We start from WikiText-103 \citep{merity2017pointer}, filter to $16{,}038$
+usable passages, and embed them with \texttt{all-MiniLM-L6-v2}
+\citep{wang2020minilmv2} into $384$-dimensional vectors. HDBSCAN
+\citep{campello2013density} with \texttt{min\_cluster\_size}{=}$200$,
+\texttt{min\_samples}{=}$5$, Euclidean distance, and Excess-of-Mass (EOM) cluster selection
+produces $10$ non-noise semantic clusters and a noise pool of $9{,}198$
+passages ($57.4\%$). We discard the noise pool and use only the clustered
+passages when constructing forget-set candidates. Fig.~\ref{fig:triplet-schema}
+summarises the construction.
 
 \begin{center}
 \centering
@@ -348,7 +350,7 @@ We start from WikiText-103 \citep{merity2017pointer}, filter to $16{,}038$ usabl
 \put(120,142){\vector(0,-1){14}}
 \put(45,96){\framebox(150,32){\shortstack{$10$ semantic clusters\\noise pool excluded}}}
 \put(120,96){\vector(0,-1){14}}
-\put(35,50){\framebox(170,32){\shortstack{Per cluster: sample $10$ disjoint triplets\\$100$ triplets total}}}
+\put(35,50){\framebox(170,32){\shortstack{Per cluster: sample $10$ triplets\\$100$ triplets total}}}
 \put(120,50){\line(0,-1){8}}
 \put(38,42){\line(1,0){164}}
 \put(38,42){\vector(0,-1){8}}
@@ -361,26 +363,31 @@ We start from WikiText-103 \citep{merity2017pointer}, filter to $16{,}038$ usabl
 \end{picture}}
 \vspace{0.35em}
 \refstepcounter{figure}\label{fig:triplet-schema}
-\parbox{0.96\columnwidth}{\small\textbf{Figure~\thefigure:} Triplet schema. WikiText-103 passages are filtered, embedded, and clustered; each semantic cluster yields $10$ triplets. The train split is the forget set, validation/test splits are same-topic neighbours, and test splits from other triplets serve as cross-topic bystanders in off-diagonal evaluation.}
+\parbox{0.96\columnwidth}{\small\textbf{Figure~\thefigure:} Triplet schema. WikiText-103 passages are filtered, embedded, and clustered; each non-noise semantic cluster yields $10$ triplets. The train split is the forget set, validation/test splits are same-topic neighbours, and test splits from triplets in other clusters serve as cross-topic bystanders in off-diagonal evaluation.}
 \end{center}
 
-For each cluster we sample $10$ disjoint \emph{triplets}, giving $100$ triplets in total. Each triplet contains three same-cluster but mutually disjoint splits of $50$ texts:
+For each non-noise cluster we independently sample $10$ \emph{triplets}, giving
+$100$ triplets in total. Each triplet contains three same-cluster but mutually
+disjoint splits of $50$ texts:
 \begin{center}
 \small
-\begin{tabular}{@{}lll@{}}
+\begin{tabular}{@{}ll@{}}
     \toprule
-    Split & 50 texts & Downstream role \\
+    Layer & Downstream role \\
     \midrule
-    \texttt{train}      & forget set $\Df$              & unlearning target \\
-    \texttt{validation} & neighbours                    & retain/probe \\
-    \texttt{test}       & probe texts                   & diag/off-diag probe \\
+    $\Lone$: forget set $\Df$ & unlearning target \\
+    $\Ltwo$: neighbours       & neighbour knowledge \\
+    $\Lthree$: bystanders     & unintended knowledge corruption \\
     \bottomrule
 \end{tabular}
 \end{center}
-The within-cluster but mutually disjoint design supports both same-topic and
-cross-topic evaluation by re-indexing the same triplet collection. Different
-triplets may overlap across clusters because sampling is independent, but
-within a triplet the three splits never share a text.
+The within-triplet disjointness gives a clean separation between the unlearning
+target, same-topic neighbour knowledge, and off-diagonal corruption probes. Triplets are sampled independently, so
+two triplets drawn from the same cluster may reuse passages; triplets from
+different clusters are disjoint by construction because HDBSCAN assigns each
+passage to a single cluster. In the cross-PPL matrix, the matched validation
+and test splits instantiate $\Ltwo$, while off-diagonal test splits instantiate
+$\Lthree$.
 
 \subsection{Unlearning Procedure}
 \label{sec:unlearn}
@@ -390,19 +397,19 @@ We unlearn Llama-3.1-8B-Instruct \citep{dubey2024llama3} with the GradAscent obj
 \subsection{Cross-PPL Evaluation Protocol}
 \label{sec:matrix}
 
-Following Sec.~\ref{sec:problem}, we evaluate every unlearned checkpoint on
-every triplet split and normalise each PPL by the corresponding base-model
-PPL. With $100$ checkpoints, $100$ evaluation triplets, $3$ splits, and $50$
-texts per split, the sweep yields $1.5$M per-sample ratios. The diagonal
-entries provide $5{,}000$ forget-set samples and $10{,}000$ same-topic held-out
-samples; off-diagonal test splits provide $495{,}000$ cross-topic bystander
-samples.
-
-For reporting, we aggregate the layer labels defined in Sec.~\ref{sec:problem}
-by geometric mean and by the fraction of samples with ratio $r{>}1.1$. The
-full cross-PPL sweep takes $\approx 6$\,h\,$11$\,min on one H100
-($\approx 2.2$\,s per checkpoint--triplet pair). We cache a $1.5$M-row
-long-format table for downstream auditing and sanity checks.
+To attribute observed spread cleanly to $\Df^{(i)}$, every unlearned checkpoint
+$M_{\theta_i}$ is evaluated on the \emph{same} grid of $100$ triplets $\times\,3$
+splits $\times\,50$ texts ($100 \times 100 \times 3 \times 50 = 1{.}5$M
+per-sample ratios), rather than each checkpoint choosing its own bystander pool. This unified probe set ensures that differences in
+$(\Lone^{(i)},\Ltwo^{(i)},\Lthree^{(i)})$ across $i$ cannot be attributed to
+differences in the evaluation texts. Per-sample PPLs are normalised by the
+matching base-model PPL (Sec.~\ref{sec:problem}), so absolute-difficulty
+variation across passages cancels and ratios are comparable across the
+$1.5$M-row pool. We aggregate ratios per layer by geometric mean and by the
+fraction of samples with $r{>}1.1$. Base-model PPLs are cached once on the
+$100\times3$ probe set; the full unlearned sweep takes $\approx 6$\,h\,$11$\,min
+on one H100 ($\approx 2.2$\,s per checkpoint--triplet pair), and is exported as
+a long-format table for downstream auditing.
 
 % ============================================================================
 % 4. Three-Layer Unlearning Impact
@@ -412,8 +419,8 @@ long-format table for downstream auditing and sanity checks.
 
 This section reports the main empirical shape of unlearning impact. Following
 Sec.~\ref{sec:problem}, we separate the effect of a single unlearning run into
-three layers: $\Lforget$ is the intended degradation on the forget set,
-$\Lneigh$ is the impact on held-out same-topic neighbours, and $\Lbyst$ is the
+three layers: $\Lone$ is the intended degradation on the forget set,
+$\Ltwo$ is the impact on held-out same-topic neighbours, and $\Lthree$ is the
 impact on cross-topic bystanders. Table~\ref{tab:headline} reports geometric
 means of the per-sample PPL ratio $r$ across the $1.5$M evaluations, and
 Fig.~\ref{fig:three-layer-decay} visualises the same pattern.
@@ -424,7 +431,7 @@ Fig.~\ref{fig:three-layer-decay} visualises the same pattern.
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}lccc@{}}
     \toprule
-                                                   & $\Lforget$ & $\Lneigh$ & $\Lbyst$ \\
+                                                   & $\Lone$ & $\Ltwo$ & $\Lthree$ \\
     \midrule
     Samples                                        & $5{,}000$ & $10{,}000$ & $495{,}000$ \\
     Geo-mean $r$                                   & \textbf{$1.96\times$} & \textbf{$1.32\times$} & \textbf{$1.19\times$} \\
@@ -432,14 +439,14 @@ Fig.~\ref{fig:three-layer-decay} visualises the same pattern.
     \% samples with $r{>}2.0$                      & $42.0$  & $2.4$  & $0.8$ \\
     \bottomrule
 \end{tabular}
-\caption{Three-layer unlearning impact headline ($n{=}100$ forget sets, $1.5$M per-sample ratios). Impact decays strictly ($\Lforget{>}\Lneigh{>}\Lbyst$), but bystander impact remains measurable: $\Lbyst{>}1$ on $73.8\%$ of cross-topic samples.}
+\caption{Three-layer unlearning impact headline ($n{=}100$ forget sets, $1.5$M per-sample ratios). Impact decays strictly ($\Lone{>}\Ltwo{>}\Lthree$), but bystander impact remains measurable: $\Lthree{>}1$ on $73.8\%$ of cross-topic samples.}
 \label{tab:headline}
 \end{table}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.95\columnwidth]{fig_three_layer_decay.pdf}
-\caption{\textbf{Three-layer impact decay.} Left: geo-mean PPL ratio $r$ falls from $\Lforget{=}1.96\times$ to $\Lbyst{=}1.19\times$. Right: fraction of samples with $r{>}1.1$ ($100\%/90.8\%/73.8\%$). $\Lbyst$ bystander impact is non-zero in both senses.}
+\caption{\textbf{Three-layer impact decay.} Left: geo-mean PPL ratio $r$ falls from $\Lone{=}1.96\times$ to $\Lthree{=}1.19\times$. Right: fraction of samples with $r{>}1.1$ ($100\%/90.8\%/73.8\%$). $\Lthree$ bystander impact is non-zero in both senses.}
 \label{fig:three-layer-decay}
 \end{figure}
 
@@ -455,7 +462,7 @@ Fig.~\ref{fig:per-forget-profile} shows the full distribution.
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}lccc@{}}
     \toprule
-                                                   & $\Lforget$ & $\Lneigh$ & $\Lbyst$ \\
+                                                   & $\Lone$ & $\Ltwo$ & $\Lthree$ \\
     \midrule
     Mildest triplet (\texttt{029})                 & $1.54$ & $1.15$ & $1.12$ \\
     Worst triplet (\texttt{073}, ``storm'')        & $\mathbf{2.44}$ & $\mathbf{1.73}$ & $\mathbf{1.26}$ \\
@@ -463,14 +470,14 @@ Fig.~\ref{fig:per-forget-profile} shows the full distribution.
     Spread (max/min, $n{=}100$)                    & $\mathbf{1.59\times}$ & $1.50\times$ & $1.13\times$ \\
     \bottomrule
 \end{tabular}
-\caption{Forget-set-induced variation. $\Lforget$ varies by $1.59\times$ between the mildest and worst $\Df$ under fixed algorithm/hyperparameters.}
+\caption{Forget-set-induced variation. $\Lone$ varies by $1.59\times$ between the mildest and worst $\Df$ under fixed algorithm/hyperparameters.}
 \label{tab:perforget}
 \end{table}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.95\columnwidth]{fig_per_forget_profile.pdf}
-\caption{\textbf{Per-forget-set variance ($n{=}100$).} Box + jitter of geo-mean $r$ for each layer; one dot per forget set. Spread $\max/\min$ reaches $1.59\times$ on $\Lforget$, $1.50\times$ on $\Lneigh$, $1.13\times$ on $\Lbyst$. \texttt{triplet\_073} (``storm'') is the worst on $\Lforget$ and $\Lneigh$ but not on $\Lbyst$ (where \texttt{triplet\_072} is the maximum, $1.26\times$); \texttt{triplet\_029} is the $\Lforget$ minimum. Distribution shape is markedly tighter as the layer recedes from $\Df$.}
+\caption{\textbf{Per-forget-set variance ($n{=}100$).} Box + jitter of geo-mean $r$ for each layer; one dot per forget set. Spread $\max/\min$ reaches $1.59\times$ on $\Lone$, $1.50\times$ on $\Ltwo$, $1.13\times$ on $\Lthree$. \texttt{triplet\_073} (``storm'') is the worst on $\Lone$ and $\Ltwo$ but not on $\Lthree$ (where \texttt{triplet\_072} is the maximum, $1.26\times$); \texttt{triplet\_029} is the $\Lone$ minimum. Distribution shape is markedly tighter as the layer recedes from $\Df$.}
 \label{fig:per-forget-profile}
 \end{figure}
 
@@ -480,7 +487,7 @@ Together, these results support three observations.
 The layer ordering is not an arbitrary binning choice: the measured impact
 decreases monotonically from the forget set to neighbours to bystanders.
 Table~\ref{tab:headline} gives
-$\Lforget{=}1.96\times{>}\Lneigh{=}1.32\times{>}\Lbyst{=}1.19\times$, and
+$\Lone{=}1.96\times{>}\Ltwo{=}1.32\times{>}\Lthree{=}1.19\times$, and
 Fig.~\ref{fig:three-layer-decay} shows the same decay in both geo-mean PPL
 ratio and the fraction of samples with $r{>}1.1$. The ordering also holds
 within each cluster (Appendix~\ref{app:tables}), so it is not an artefact of
@@ -488,15 +495,15 @@ global aggregation.
 
 \textbf{(C2) Bystander impact is not zero.}
 The third layer is weaker than the first two, but cross-topic bystanders are
-still measurably hit. $\Lbyst$ has geo-mean $1.19\times$, and $73.8\%$ of
+still measurably hit. $\Lthree$ has geo-mean $1.19\times$, and $73.8\%$ of
 cross-topic samples exceed $r{>}1.1$. These samples are not in the forget set
 and are not same-topic neighbours of the unlearned triplet, so this is genuine
 spillover rather than intended forgetting.
 
 \textbf{(C3) The profile varies with the forget set.}
 The same algorithm and hyperparameters do not produce a single fixed impact
-profile. In Table~\ref{tab:perforget}, changing only $\Df$ moves $\Lforget$
-from $1.54\times$ to $2.44\times$ and $\Lneigh$ from $1.15\times$ to
+profile. In Table~\ref{tab:perforget}, changing only $\Df$ moves $\Lone$
+from $1.54\times$ to $2.44\times$ and $\Ltwo$ from $1.15\times$ to
 $1.73\times$; Fig.~\ref{fig:per-forget-profile} shows that this is a
 distributional pattern rather than a single outlier. This variation makes the
 forget set itself worth auditing before paying for full unlearning and
@@ -674,7 +681,7 @@ independently on NPO labels — we do not transfer predictions across unlearners
 \setlength{\tabcolsep}{2.1pt}
 \begin{tabular}{@{}llccc@{}}
     \toprule
-    Metric & Alg. & $\Lforget$ & $\Lneigh$ & $\Lbyst$ \\
+    Metric & Alg. & $\Lone$ & $\Ltwo$ & $\Lthree$ \\
     \midrule
     geo $r$
        & GradAscent & $1.96\times$       & $1.32\times$       & $1.19\times$       \\
@@ -704,7 +711,7 @@ independently on NPO labels — we do not transfer predictions across unlearners
 \textbf{Take-away.} The audit predictor is unlearner-agnostic: the $12$-dim
 forget-set descriptor lifts all three layers above the LOO-mean baseline for
 both GradAscent and NPO under independent training. Top-10\% recall is in fact
-higher on NPO ($8/10$ on $\Lneigh$, $5/10$ on $\Lbyst$), likely because NPO's
+higher on NPO ($8/10$ on $\Ltwo$, $5/10$ on $\Lthree$), likely because NPO's
 narrower dynamic range makes the ranking task easier. The same conclusion is
 reached separately per unlearner without label transfer between them.
 
@@ -852,7 +859,7 @@ We acknowledge three ``singles'' that the present study does not control for:
 \begin{enumerate}
     \setlength\itemsep{0.15em}
     \item \textbf{Single base model} (Llama-3.1-8B-Instruct). Geometry-to-corruption mapping may be model-specific; verifying on Mistral-7B and a Qwen variant is high-priority next work.
-    \item \textbf{$n{=}100$}. All three CIs exclude zero on both unlearners (Sec.~\ref{sec:cross-unlearner}), but $\Lbyst$ remains the weakest layer; scaling to $n{=}500$--$1000$ is feasible in one extra GPU-day.
+    \item \textbf{$n{=}100$}. All three CIs exclude zero on both unlearners (Sec.~\ref{sec:cross-unlearner}), but $\Lthree$ remains the weakest layer; scaling to $n{=}500$--$1000$ is feasible in one extra GPU-day.
     \item \textbf{Single metric}: PPL ratio. PPL captures token-level corruption but not task-level utility (QA accuracy). Parallel QA-based evaluation is in progress as a complementary axis.
 \end{enumerate}
 GradDiff and RMU are the natural next unlearners to add alongside the GradAscent
@@ -954,7 +961,48 @@ auditor uses scikit-learn's Random Forest regressor:
 \paragraph{Per-cluster monotonicity.} Across all $10$ clusters,
 $\Lone(c){>}\Ltwo(c){>}\Lthree(c)$ holds without exception. The smallest
 within-cluster gap $\Lone{-}\Ltwo$ is $0.39$ (mildest cluster), and the largest
-is $0.71$ (storm). The full table is included in the released summary JSON.
+is $0.71$ (storm).
+
+\paragraph{Per-cluster three-layer profile.}
+Table~\ref{tab:per-cluster} reports cluster-level mean and within-cluster
+spread (max/min over the $10$ triplets in that cluster) for each of the three
+layers. \textbf{Within-cluster spread is non-trivial in every cluster on every
+layer} (min $1.02$, max $1.39$), so the global spread $1.59 / 1.50 / 1.13$
+in Table~\ref{tab:perforget} is not an artefact of pooling across clusters: a
+single cluster's $10$ triplets already exhibit measurable forget-set-induced
+variation. Cluster means also vary ($\Lone$: $1.78$--$2.22$; $\Ltwo$:
+$1.20$--$1.59$; $\Lthree$: $1.16$--$1.23$), but the within-cluster signal alone
+is sufficient to support C3.
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}rcccccc@{}}
+    \toprule
+    & \multicolumn{2}{c}{$\Lone$} & \multicolumn{2}{c}{$\Ltwo$} & \multicolumn{2}{c}{$\Lthree$} \\
+    \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+    Cluster & mean & spread & mean & spread & mean & spread \\
+    \midrule
+     1 & $2.22$ & $1.32$ & $1.47$ & $1.08$ & $1.20$ & $1.02$ \\
+     2 & $2.00$ & $1.12$ & $1.26$ & $1.07$ & $1.19$ & $1.05$ \\
+     3 & $1.78$ & $1.29$ & $1.31$ & $1.10$ & $1.21$ & $1.07$ \\
+     4 & $2.10$ & $1.27$ & $1.37$ & $1.09$ & $1.20$ & $1.04$ \\
+     5 & $1.94$ & $1.36$ & $1.38$ & $1.17$ & $1.21$ & $1.09$ \\
+     6 & $1.79$ & $1.13$ & $1.20$ & $1.08$ & $1.16$ & $1.05$ \\
+     7 & $2.02$ & $1.24$ & $1.21$ & $1.06$ & $1.19$ & $1.05$ \\
+     8 & $2.11$ & $1.34$ & $1.59$ & $1.19$ & $1.23$ & $1.05$ \\
+     9 & $1.83$ & $1.39$ & $1.24$ & $1.08$ & $1.18$ & $1.08$ \\
+    10 & $1.93$ & $1.24$ & $1.24$ & $1.05$ & $1.16$ & $1.06$ \\
+    \midrule
+    All $100$ & $1.97$ & $\mathbf{1.59}$ & $1.33$ & $\mathbf{1.50}$ & $1.19$ & $\mathbf{1.13}$ \\
+    \bottomrule
+\end{tabular}
+\caption{Per-cluster three-layer profile ($n{=}10$ triplets per cluster). Spread is within-cluster max/min. Last row pools all $100$ forget sets and reports the global spread reported in the main text. The fact that spread $>1$ holds inside every individual cluster confirms that forget-set-induced variation is not driven by between-cluster differences alone.}
+\label{tab:per-cluster}
+\end{table}
+
+The full per-triplet $(\Lone,\Ltwo,\Lthree)$ table is released as supplementary CSV (\texttt{part1\_corruption\_profile.csv}).
 
 
 \end{document}
